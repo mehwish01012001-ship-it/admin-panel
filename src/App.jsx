@@ -5,7 +5,6 @@ import { ToastContainer } from 'react-toastify';
 
 import store from './redux/store';
 import AppRoutes from './routes/AppRoutes';
-import Loader from './components/Loader/Loader';
 import { authService } from './services/authService';
 import { setUser, clearUser } from './redux/slices/authSlice';
 
@@ -14,13 +13,10 @@ import 'react-toastify/dist/ReactToastify.css';
 
 const AppContent = () => {
   const dispatch = useDispatch();
-  const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
       dispatch(clearUser());
-      setLoading(false);
       return;
     }
 
@@ -31,17 +27,11 @@ const AppContent = () => {
         dispatch(setUser({ user, token }));
       } catch (err) {
         dispatch(clearUser());
-      } finally {
-        setLoading(false);
       }
     };
 
     loadProfile();
   }, [dispatch]);
-
-  if (loading) {
-    return <Loader />;
-  }
 
   return (
     <Router>
