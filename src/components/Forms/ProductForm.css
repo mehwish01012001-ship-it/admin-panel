@@ -1,0 +1,42 @@
+.admin-product-form {
+  display: grid;
+  gap: 20px;
+  padding: 24px;
+  background: #ffffff;
+  border-radius: 24px;
+  box-shadow: 0 18px 50px rgba(17, 17, 17, 0.08);
+}
+
+.admin-form-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.admin-product-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: #444;
+}
+
+.admin-product-form input,
+.admin-product-form textarea {
+  padding: 14px 16px;
+  border: 1px solid #e7e7e7;
+  border-radius: 14px;
+}
+
+.admin-product-form .full-width {
+  grid-column: 1 / -1;
+}
+
+.btn-submit {
+  width: fit-content;
+  padding: 14px 28px;
+  border: none;
+  border-radius: 999px;
+  background: #111111;
+  color: #ffffff;
+  cursor: pointer;
+}

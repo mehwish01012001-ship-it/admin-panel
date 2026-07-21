@@ -1,0 +1,30 @@
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: grid;
+  place-items: center;
+  z-index: 1000;
+}
+
+.image-modal {
+  background: #fff;
+  border-radius: 24px;
+  max-width: 720px;
+  width: 100%;
+  overflow: hidden;
+}
+
+.image-modal img {
+  width: 100%;
+  display: block;
+}
+
+.btn-close {
+  width: 100%;
+  border: none;
+  padding: 16px 20px;
+  background: #111111;
+  color: #fff;
+  cursor: pointer;
+}

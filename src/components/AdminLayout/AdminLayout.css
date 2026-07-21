@@ -1,0 +1,275 @@
+/* ========================================
+   RQ ADMIN LAYOUT - LUXURY OFF WHITE
+======================================== */
+.rq-admin-layout {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  background: linear-gradient(135deg, #fdfbf7 0%, #f5efe4 50%, #faf6ee 100%);
+  width: 100%;
+  overflow-x: hidden;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  box-sizing: border-box;
+}
+
+/* Universally handling all sizing issues */
+.rq-admin-layout *, 
+.rq-admin-layout *::before, 
+.rq-admin-layout *::after {
+  box-sizing: border-box;
+}
+
+/* ========================================
+   PREMIUM BACKGROUND BLOBS
+======================================== */
+.rq-bg {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(140px);
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.85;
+}
+
+.rq-bg-1 {
+  width: min(500px, 80vw);
+  height: min(500px, 80vw);
+  background: rgba(212, 175, 55, 0.14);
+  top: -180px;
+  left: -120px;
+  animation: floatBlob 15s ease-in-out infinite;
+}
+
+.rq-bg-2 {
+  width: min(450px, 70vw);
+  height: min(450px, 70vw);
+  background: rgba(230, 190, 130, 0.12);
+  right: -100px;
+  top: 15%;
+  animation: floatBlob 18s ease-in-out infinite alternate;
+}
+
+.rq-bg-3 {
+  width: min(400px, 60vw);
+  height: min(400px, 60vw);
+  background: rgba(245, 222, 179, 0.15);
+  bottom: -120px;
+  right: 25%;
+  animation: floatBlob 20s ease-in-out infinite;
+}
+
+/* ========================================
+   MAIN AREA
+======================================== */
+.rq-admin-main {
+  flex: 1;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-width: 0; /* Prevents flex items from overflowing */
+  margin-left: 280px;
+  transition: margin-left 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.rq-admin-main.collapsed {
+  margin-left: 90px;
+}
+
+/* ========================================
+   CONTENT AREA
+======================================== */
+.rq-admin-content {
+  flex: 1;
+  padding: 40px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.rq-content-wrapper {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  animation: fadeUp 0.55s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+}
+
+/* ========================================
+   SESSION EXPIRY MODAL (GLASSMORPHISM)
+======================================== */
+.session-expire-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 22, 15, 0.35);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 20px; /* Safe padding for small mobile screens */
+  animation: fadeIn 0.3s ease;
+}
+
+.session-expire-card {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 24px;
+  padding: 36px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 30px 70px rgba(40, 35, 25, 0.15);
+  text-align: center;
+  animation: scaleUp 0.34s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.session-expire-card h3 {
+  margin: 0 0 12px;
+  color: #1e293b;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.session-expire-card p {
+  margin: 0 0 24px;
+  color: #64748b;
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+.session-expire-card button {
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #c5a867 0%, #b3924e 100%);
+  color: #ffffff;
+  padding: 14px 28px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  width: 100%;
+  box-shadow: 0 4px 15px rgba(179, 146, 78, 0.3);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.session-expire-card button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(179, 146, 78, 0.4);
+}
+
+/* ========================================
+   PREMIUM CARD STYLE
+======================================== */
+.rq-card {
+  background: #ffffff;
+  border: 1px solid rgba(240, 235, 225, 0.7);
+  border-radius: 24px;
+  padding: 28px;
+  width: 100%;
+  box-shadow: 0 10px 35px rgba(160, 145, 120, 0.04), 0 2px 6px rgba(160, 145, 120, 0.02);
+  transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* ========================================
+   PREMIUM TABLE WITH RESPONSIVE SCROLL
+======================================== */
+.rq-table-container {
+  background: #ffffff;
+  border: 1px solid rgba(240, 235, 225, 0.7);
+  border-radius: 24px;
+  width: 100%;
+  overflow-x: auto; /* Agar table columns zyada hon to layout kharab nahi hoga, scroll ho jaye ga */
+  -webkit-overflow-scrolling: touch;
+  box-shadow: 0 12px 35px rgba(160, 145, 120, 0.04);
+}
+
+.rq-table-container table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  min-width: 600px; /* Minimum width safe side tables k liye */
+}
+
+.rq-table-container th {
+  background: #fdfbf7;
+  color: #64748b;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 20px 24px;
+  border-bottom: 1px solid #f5efe4;
+}
+
+.rq-table-container td {
+  padding: 20px 24px;
+  color: #334155;
+  font-size: 0.92rem;
+  border-bottom: 1px solid #f8f6f0;
+  transition: background-color 0.2s;
+}
+
+/* ========================================
+   SCROLLBAR
+======================================== */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track { background: #f7f3eb; }
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #dfc066, #c5a447);
+  border-radius: 10px;
+}
+
+/* ========================================
+   ANIMATIONS
+======================================== */
+@keyframes floatBlob {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(20px, -20px) scale(1.05); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes scaleUp { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ========================================
+   MEDIA QUERIES (FULL RESPONSIVE)
+======================================== */
+@media (max-width: 1200px) {
+  .rq-admin-main {
+    margin-left: 260px;
+  }
+}
+
+@media (max-width: 992px) {
+  .rq-admin-main,
+  .rq-admin-main.collapsed {
+    margin-left: 0; /* Sidebar links auto hidden via mobile sidebar state */
+  }
+  .rq-admin-content {
+    padding: 24px 20px; /* Margins are slightly adjusted for tablets */
+  }
+}
+
+@media (max-width: 576px) {
+  .rq-admin-content {
+    padding: 16px 12px; /* Very minimal safe padding for small mobile devices */
+  }
+  
+  .session-expire-card {
+    padding: 24px 16px;
+  }
+
+  .rq-card {
+    padding: 20px 16px; /* Inside component elements dynamic scale spacing */
+  }
+}

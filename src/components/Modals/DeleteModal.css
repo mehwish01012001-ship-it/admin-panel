@@ -1,0 +1,40 @@
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: grid;
+  place-items: center;
+  z-index: 1000;
+}
+
+.modal-card {
+  width: min(520px, calc(100% - 32px));
+  background: #fff;
+  border-radius: 24px;
+  padding: 28px;
+  box-shadow: 0 28px 80px rgba(17, 17, 17, 0.16);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.btn-secondary,
+.btn-danger {
+  border: none;
+  border-radius: 999px;
+  padding: 12px 24px;
+  cursor: pointer;
+}
+
+.btn-secondary {
+  background: #f3f3f3;
+}
+
+.btn-danger {
+  background: #d32f2f;
+  color: #fff;
+}

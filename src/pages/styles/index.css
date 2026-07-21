@@ -1,0 +1,23 @@
+/* Shared admin page layout utilities */
+.page-header {
+  margin-bottom: 24px;
+}
+
+.btn-primary,
+.btn-submit {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border: none;
+  border-radius: 12px;
+  background: #111111;
+  color: #ffffff;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.btn-primary:hover,
+.btn-submit:hover {
+  background: #333333;
+}

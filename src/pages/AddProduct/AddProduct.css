@@ -1,0 +1,82 @@
+.add-product-page {
+  width: 100%;
+  min-height: 100vh;
+  padding: 48px 24px;
+  background-color: #FAF9F6; /* Premium alabaster off-white */
+  background-image: 
+    radial-gradient(circle at top left, rgba(201, 168, 106, 0.05), transparent 45%),
+    radial-gradient(circle at bottom right, rgba(212, 175, 55, 0.03), transparent 40%);
+  color: #1A1A1A;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.page-header {
+  max-width: 1100px;
+  margin: 0 auto 40px auto;
+  text-align: center;
+  animation: fadeSlideDown 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.subtitle-brand {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: #C9A86A; /* Soft champagne gold */
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.page-header h1 {
+  font-size: 38px;
+  font-weight: 300; /* Sophisticated light weight */
+  letter-spacing: -0.5px;
+  color: #1A1A1A;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.page-header p {
+  color: #707070;
+  margin-top: 8px;
+  font-size: 15px;
+  font-weight: 300;
+}
+
+.page-content {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  animation: fadeSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+}
+
+@keyframes fadeSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .add-product-page {
+    padding: 32px 16px;
+  }
+  
+  .page-header h1 {
+    font-size: 28px;
+  }
+}

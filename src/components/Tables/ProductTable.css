@@ -1,0 +1,23 @@
+.table-card {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: 0 18px 50px rgba(17, 17, 17, 0.06);
+}
+
+.product-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.product-table th,
+.product-table td {
+  padding: 16px 14px;
+  text-align: left;
+  border-bottom: 1px solid #f2f2f2;
+}
+
+.product-table th {
+  color: #7a7a7a;
+  font-size: 13px;
+}
