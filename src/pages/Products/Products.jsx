@@ -158,12 +158,12 @@ const Products = () => {
           </div>
         </div>
 
-        <div className="stat-card animate-slide-up" style={{ animationDelay: '0.4s' }}>
+          <div className="stat-card animate-slide-up" style={{ animationDelay: '0.4s' }}>
           <div className="stat-icon champagne">
             <FiDollarSign />
           </div>
           <div>
-            <h3>${stats.totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
+            <h3>Rs. {stats.totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
             <p>Valuation</p>
           </div>
         </div>
@@ -263,7 +263,7 @@ const Products = () => {
                     </div>
                     
                     <div className="card-meta-row">
-                      <span className="price">${Number(product.price || 0).toFixed(2)}</span>
+                      <span className="price">Rs. {Number(product.price || 0).toFixed(2)}</span>
                       <span className={`stock-badge ${product.stock < 10 ? 'low' : 'good'}`}>
                         {product.stock} left
                       </span>

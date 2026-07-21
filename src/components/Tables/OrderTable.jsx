@@ -18,7 +18,7 @@ const OrderTable = ({ orders }) => (
           <tr key={order.id}>
             <td>{order.id}</td>
             <td>{order.customer}</td>
-            <td>${order.total}</td>
+            <td>Rs. {Number(order.total).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
             <td>{order.status}</td>
             <td>{order.date}</td>
           </tr>

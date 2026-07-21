@@ -18,7 +18,7 @@ const ProductTable = ({ products }) => (
           <tr key={product.id}>
             <td>{product.name}</td>
             <td>{product.category}</td>
-            <td>${product.price}</td>
+            <td>Rs. {Number(product.price).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
             <td>{product.stock}</td>
             <td>{product.status}</td>
           </tr>

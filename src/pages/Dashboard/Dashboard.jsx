@@ -109,7 +109,7 @@ const Dashboard = () => {
         title: "Total Revenue",
         value: totalRevenue,
         icon: <FiDollarSign />,
-        prefix: "$",
+        prefix: "Rs.",
         color: "#C9A86A",
       },
       {
@@ -290,7 +290,7 @@ const Dashboard = () => {
             <p className="metric-title">{item.title}</p>
             <h2 className="metric-value">
               {item.prefix}
-              <CountUp end={item.value} decimals={item.prefix === "$" ? 2 : 0} separator="," duration={1.4} />
+              <CountUp end={item.value} decimals={item.prefix === "Rs." ? 2 : 0} separator="," duration={1.4} />
             </h2>
             <div className="metric-accent" style={{ backgroundColor: item.color }} />
           </motion.article>
@@ -429,7 +429,7 @@ const Dashboard = () => {
                           </div>
                         </td>
                         <td>
-                          <strong>${Number(order.totalAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</strong>
+                          <strong>Rs. {Number(order.totalAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</strong>
                         </td>
                         <td>
                           <span className={`status-pill ${statusClass}`}>{order.orderStatus || "Processing"}</span>
@@ -466,7 +466,7 @@ const Dashboard = () => {
                     <strong>{product.name}</strong>
                     <span>{product.sales} items sold</span>
                   </div>
-                  <div className="ranking-value">${Number(product.revenue).toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
+                  <div className="ranking-value">Rs. {Number(product.revenue).toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
                 </div>
               ))
             ) : (

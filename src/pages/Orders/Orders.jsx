@@ -130,7 +130,7 @@ export default function Orders() {
           <p className="dashboard-subtitle">{orders.length} total raw operational entries</p>
         </div>
 
-        <div className="metrics-summary">
+          <div className="metrics-summary">
           <div className="metric-pill">
             <span className="metric-val">{filteredOrders.length}</span>
             <small className="metric-lbl">Filtered Orders</small>
@@ -140,7 +140,7 @@ export default function Orders() {
             <small className="metric-lbl">Total Items</small>
           </div>
           <div className="metric-pill">
-            <span className="metric-val">${totals.amount.toFixed(2)}</span>
+            <span className="metric-val">Rs. {totals.amount.toFixed(2)}</span>
             <small className="metric-lbl">Total Volume</small>
           </div>
         </div>
@@ -230,7 +230,7 @@ export default function Orders() {
                         </span>
                       </td>
                       <td className="text-right highlight-amount-cell">
-                        ${Number(order.totalAmount || 0).toFixed(2)}
+                        Rs. {Number(order.totalAmount || 0).toFixed(2)}
                       </td>
                       <td className="text-right">
                         <button
@@ -318,7 +318,7 @@ export default function Orders() {
                   <h4>Financial Data</h4>
                   <p><strong>Method:</strong> {selectedOrder.paymentMethod || 'Not provided'}</p>
                   <p><strong>Transaction Account:</strong> {selectedOrder.paymentNumber || 'Not provided'}</p>
-                  <p><strong>Total Gross Value:</strong> ${Number(selectedOrder.totalAmount || 0).toFixed(2)}</p>
+                  <p><strong>Total Gross Value:</strong> Rs. {Number(selectedOrder.totalAmount || 0).toFixed(2)}</p>
                   <p><strong>System Date:</strong> {selectedOrder.createdAt ? new Date(selectedOrder.createdAt).toLocaleString() : '-'}</p>
                 </div>
 
@@ -363,7 +363,7 @@ export default function Orders() {
                           </div>
                           
                           <div className="nested-item-right-toggle">
-                            <span className="nested-item-price-tag">${Number(item.price || 0).toFixed(2)}</span>
+                            <span className="nested-item-price-tag">Rs. {Number(item.price || 0).toFixed(2)}</span>
                             <button
                               type="button"
                               className="nested-expand-chevron-btn"

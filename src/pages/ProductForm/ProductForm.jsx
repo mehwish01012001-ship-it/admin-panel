@@ -357,7 +357,7 @@ const ProductForm = () => {
 
           <div className="grid2">
             <div className="price-input-wrapper">
-              <span className="currency-prefix">$</span>
+              <span className="currency-prefix">Rs.</span>
               <input
                 name="price"
                 value={form.price}
@@ -369,7 +369,7 @@ const ProductForm = () => {
               />
             </div>
             <div className="price-input-wrapper">
-              <span className="currency-prefix">$</span>
+              <span className="currency-prefix">Rs.</span>
               <input
                 name="comparePrice"
                 value={form.comparePrice}
@@ -550,9 +550,9 @@ const ProductForm = () => {
             <span className="preview-brand">{form.brand || 'AURA'}</span>
             <h3 className="preview-title">{form.name || 'Unnamed Masterpiece'}</h3>
             <div className="preview-price-tag">
-              <span className="preview-price">${pricePreview}</span>
+              <span className="preview-price">Rs. {pricePreview}</span>
               {form.comparePrice && (
-                <span className="preview-compare">${Number(form.comparePrice).toFixed(2)}</span>
+                <span className="preview-compare">Rs. {Number(form.comparePrice).toFixed(2)}</span>
               )}
             </div>
           </div>

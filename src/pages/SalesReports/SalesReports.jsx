@@ -33,12 +33,10 @@ const RANGE_MAP = {
   '12m': { months: 12, label: 'Last 12 months' },
 };
 
-const formatCurrency = (value) =>
-  new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0,
-  }).format(Number(value || 0));
+const formatCurrency = (value) => {
+  const num = Number(value || 0);
+  return `Rs. ${num.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
+};
 
 const formatDate = (value) => {
   if (!value) return '—';
@@ -301,8 +299,8 @@ const SalesReports = () => {
                 <div>
                   <p>Total revenue</p>
                   <h3>
-                    <AnimatedValue value={metrics.totalRevenue} prefix="$" />
-                  </h3>
+                        <AnimatedValue value={metrics.totalRevenue} prefix="Rs." />
+                      </h3>
                 </div>
               </article>
 
@@ -325,8 +323,8 @@ const SalesReports = () => {
                 <div>
                   <p>Average order</p>
                   <h3>
-                    <AnimatedValue value={metrics.averageOrderValue} prefix="$" />
-                  </h3>
+                        <AnimatedValue value={metrics.averageOrderValue} prefix="Rs." />
+                      </h3>
                 </div>
               </article>
 

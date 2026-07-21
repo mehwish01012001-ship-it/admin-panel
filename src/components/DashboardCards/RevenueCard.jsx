@@ -5,7 +5,7 @@ import { FiTrendingUp } from 'react-icons/fi';
 const RevenueCard = ({ revenue }) => (
   <StatsCard
     title="Total Revenue"
-    value={`$${revenue.toLocaleString()}`}
+    value={`Rs. ${revenue.toLocaleString()}`}
     change="+12%"
     icon={<FiTrendingUp />}
   />
