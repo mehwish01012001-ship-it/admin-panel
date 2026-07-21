@@ -2,7 +2,7 @@ import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import AdminLayout from '../components/AdminLayout/AdminLayout';
 import PrivateRoutes from './PrivateRoutes';
-import routeConfig from './RouteConfig';
+import routeConfig from './routeConfig';
 import AdminLogin from '../pages/AdminLogin/AdminLogin';
 import NotFound from '../pages/NotFound/NotFound';
 
