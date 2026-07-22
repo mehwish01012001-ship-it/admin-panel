@@ -100,9 +100,9 @@ const AddProduct = () => {
         <p>Introduce new masterpieces to your premium women's stitched collection catalog.</p>
       </header>
 
-      <div className="page-content">
+      {/* <div className="page-content"> */}
         <ProductForm />
-      </div>
+      {/* </div> */}
     </div>
   );
 };
