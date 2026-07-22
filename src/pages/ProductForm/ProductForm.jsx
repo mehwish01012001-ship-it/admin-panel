@@ -288,7 +288,7 @@ const ProductForm = () => {
 
           <div className="grid2">
             <div className="price-input-wrapper">
-              <span className="currency-prefix">Rs.</span>
+            
               <input
                 name="price"
                 value={form.price}
@@ -300,7 +300,7 @@ const ProductForm = () => {
               />
             </div>
             <div className="price-input-wrapper">
-              <span className="currency-prefix">Rs.</span>
+              {/* <span className="currency-prefix">Rs.</span> */}
               <input
                 name="comparePrice"
                 value={form.comparePrice}
