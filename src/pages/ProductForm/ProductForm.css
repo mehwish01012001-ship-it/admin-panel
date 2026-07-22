@@ -1,4 +1,4 @@
-/* Color System: Premium Off-White, Champagne Gold, & Deep Velvet Black */
+/* Custom Properties & Color Palette */
 :root {
   --aura-offwhite-bg: #FCFAF6;
   --aura-card-bg: #FFFFFF;
@@ -11,85 +11,109 @@
   --aura-error-bg: #FEF2F2;
   --aura-error-border: #FCA5A5;
   --aura-error-text: #991B1B;
+  --aura-transition-fast: 0.2s ease;
+  --aura-transition-smooth: 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Base Layout Container */
 .product-form {
   display: grid;
-  grid-template-columns: 1.4fr 1fr;
+  grid-template-columns: 1.35fr 1fr;
   gap: 32px;
-  max-width: 1300px;
+  max-width: 1320px;
   margin: 0 auto;
   padding: 24px;
   background-color: var(--aura-offwhite-bg);
-  font-family: 'Playfair Display', 'Cinzel', 'Inter', -apple-system, sans-serif;
-
+  font-family: 'Playfair Display', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  box-sizing: border-box;
 }
 
-/* Premium Card Panels */
+.product-form * {
+  box-sizing: border-box;
+}
+
+.form-left,
+.form-right {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Card Panels */
 .card {
   background: var(--aura-card-bg);
-  
-  /* border: 1px solid var(--aura-gray-border); */
-   border: 1px solid black;
+  border: 1px solid var(--aura-gray-border);
   border-radius: 12px;
-  padding: 30px;
-  padding-right: 70px;
-  margin-bottom: 24px;
+  padding: 28px;
   box-shadow: 0 4px 20px rgba(28, 25, 23, 0.02);
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: border-color var(--aura-transition-smooth), box-shadow var(--aura-transition-smooth);
 }
 
 .card:hover {
-  transform: translateY(-2px);
   border-color: var(--aura-accent-gold);
-  box-shadow: 0 10px 30px rgba(201, 168, 106, 0.06);
+  box-shadow: 0 10px 30px rgba(201, 168, 106, 0.08);
 }
 
 .card-header {
-  margin-bottom: 24px;
+  margin-bottom: 20px;
   border-bottom: 1px solid var(--aura-gold-light);
   padding-bottom: 12px;
 }
 
 .card-header h2 {
   font-family: 'Cinzel', serif;
-  font-size: 18px;
-  font-weight: 500;
+  font-size: 17px;
+  font-weight: 600;
   color: var(--aura-dark-velvet);
   text-transform: uppercase;
-  letter-spacing: 1.5px;
+  letter-spacing: 1.2px;
   margin: 0;
 }
 
 .card-subtitle {
   font-size: 12px;
   color: var(--aura-muted-text);
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
   display: block;
   margin-top: 4px;
-  
 }
 
-/* Elegant Inputs and Selection Fields */
-input, textarea, select {
+/* Form Controls & Inputs */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 16px;
+}
+
+.form-group:last-child {
+  margin-bottom: 0;
+}
+
+input[type="text"],
+input[type="number"],
+textarea,
+select {
   width: 100%;
-  padding: 14px 16px;
-  margin: 10px 0;
+  padding: 12px 16px;
   border-radius: 8px;
   border: 1px solid var(--aura-gray-border);
   background: var(--aura-input-bg);
   color: var(--aura-dark-velvet);
   font-size: 14px;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: inherit;
+  transition: all var(--aura-transition-fast);
 }
 
-input::placeholder, textarea::placeholder {
+input::placeholder,
+textarea::placeholder {
   color: #A8A29E;
   font-style: italic;
   font-size: 13px;
 }
 
-input:focus, textarea:focus, select:focus {
+input:focus,
+textarea:focus,
+select:focus {
   border-color: var(--aura-accent-gold);
   background: #FFFFFF;
   box-shadow: 0 0 0 3px rgba(201, 168, 106, 0.15);
@@ -98,10 +122,10 @@ input:focus, textarea:focus, select:focus {
 
 textarea {
   resize: vertical;
+  min-height: 120px;
   line-height: 1.6;
 }
 
-/* Styled Curated Select Box */
 select {
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23C9A86A' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
@@ -111,48 +135,49 @@ select {
   cursor: pointer;
 }
 
-/* Grid Layouts */
+/* Grid Layout System */
 .grid2 {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 50px;
-
-  
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
 }
 
-/* Pricing Input with Inline Custom Currency Prefix */
+/* Price Inputs with Currency Symbol */
 .price-input-wrapper {
   position: relative;
   display: flex;
   align-items: center;
+  width: 100%;
 }
 
 .currency-prefix {
   position: absolute;
-  left: 16px;
+  left: 14px;
   color: var(--aura-accent-gold);
   font-family: 'Cinzel', serif;
-  font-weight: bold;
+  font-weight: 600;
+  font-size: 13px;
+  pointer-events: none;
 }
 
 .price-input-wrapper input {
-  padding-left: 32px;
+  padding-left: 42px;
 }
 
-/* Luxury Toggle Switches */
+/* Toggle Switches */
 .switches-box {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  margin-top: 18px;
+  gap: 16px;
+  margin-top: 12px;
   border-top: 1px dashed var(--aura-gray-border);
   padding-top: 18px;
 }
 
 .switch-container {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  position: relative;
   cursor: pointer;
   user-select: none;
 }
@@ -160,33 +185,31 @@ select {
 .switch-container input {
   position: absolute;
   opacity: 0;
-  cursor: pointer;
-  height: 0;
-  width: 0;
+  pointer-events: none;
 }
 
 .switch-slider {
   position: relative;
-  height: 20px;
-  width: 38px;
+  height: 22px;
+  width: 40px;
   background-color: #E7E5E4;
   border-radius: 20px;
-  transition: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  display: inline-block;
+  transition: background-color var(--aura-transition-fast);
   margin-right: 12px;
+  flex-shrink: 0;
 }
 
 .switch-slider:before {
-  position: absolute;
   content: "";
-  height: 14px;
-  width: 14px;
+  position: absolute;
+  height: 16px;
+  width: 16px;
   left: 3px;
   bottom: 3px;
   background-color: #FFFFFF;
   border-radius: 50%;
-  transition: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  transition: transform var(--aura-transition-fast);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 
 .switch-container input:checked + .switch-slider {
@@ -200,13 +223,13 @@ select {
 .switch-label {
   font-size: 13px;
   color: var(--aura-dark-velvet);
-  letter-spacing: 0.3px;
+  letter-spacing: 0.2px;
 }
 
-/* Interactive Sidebar Preview Card */
+/* Sidebar Preview Block */
 .form-right {
   position: sticky;
-  top: 30px;
+  top: 24px;
   height: fit-content;
 }
 
@@ -214,9 +237,8 @@ select {
   background: var(--aura-card-bg);
   border: 1px solid var(--aura-gray-border);
   border-radius: 12px;
-  padding: 16px;
+  padding: 20px;
   text-align: center;
-  margin-bottom: 24px;
   box-shadow: 0 4px 25px rgba(28, 25, 23, 0.03);
 }
 
@@ -227,10 +249,10 @@ select {
   text-transform: uppercase;
   color: var(--aura-accent-gold);
   border: 1px solid var(--aura-accent-gold);
-  padding: 3px 12px;
+  padding: 4px 14px;
   border-radius: 50px;
   letter-spacing: 1.5px;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 
 .preview-img-wrapper {
@@ -240,38 +262,50 @@ select {
   border-radius: 8px;
   background: var(--aura-offwhite-bg);
   margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.preview-img-wrapper img {
+.preview-img-wrapper img,
+.preview-img-wrapper video {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform var(--aura-transition-smooth);
+}
+
+.preview-placeholder {
+  color: var(--aura-muted-text);
+  font-size: 12px;
+  font-style: italic;
 }
 
 .preview-card:hover .preview-img-wrapper img {
-  transform: scale(1.03);
-   
+  transform: scale(1.02);
 }
 
 .preview-meta {
-  padding: 8px;
+  padding: 4px;
 }
 
 .preview-brand {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--aura-muted-text);
   letter-spacing: 2px;
   text-transform: uppercase;
+  display: block;
 }
 
 .preview-title {
   font-family: 'Cinzel', serif;
   font-size: 16px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--aura-dark-velvet);
   margin: 6px 0 10px 0;
-  letter-spacing: 0.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .preview-price-tag {
@@ -282,28 +316,28 @@ select {
 }
 
 .preview-price {
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 600;
   color: var(--aura-dark-velvet);
 }
 
 .preview-compare {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--aura-muted-text);
   text-decoration: line-through;
 }
 
-/* Artisanal Media File Drop Area */
+/* File Upload Zone */
 .file-drop-zone {
   position: relative;
   border: 2px dashed var(--aura-accent-gold);
   background-color: var(--aura-offwhite-bg);
   border-radius: 10px;
-  padding: 32px 16px;
+  padding: 28px 16px;
   text-align: center;
   cursor: pointer;
-  transition: all 0.3s ease;
-  margin-bottom: 20px;
+  transition: background-color var(--aura-transition-fast);
+  margin-bottom: 16px;
 }
 
 .file-drop-zone:hover {
@@ -324,18 +358,18 @@ select {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   pointer-events: none;
 }
 
 .upload-icon {
-  font-size: 24px;
+  font-size: 22px;
   color: var(--aura-accent-gold);
 }
 
 .upload-text-main {
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 600;
   color: var(--aura-dark-velvet);
 }
 
@@ -344,11 +378,12 @@ select {
   color: var(--aura-muted-text);
 }
 
-/* Image Grids & Box Interactivity */
+/* Image Thumbnails Grid */
 .imgGrid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
 }
 
 .imgBox {
@@ -356,10 +391,12 @@ select {
   aspect-ratio: 1 / 1;
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--aura-gray-border);
+  background: var(--aura-offwhite-bg);
 }
 
-.imgBox img {
+.imgBox img,
+.imgBox video {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -367,8 +404,8 @@ select {
 
 .delete-img-btn {
   position: absolute;
-  top: 6px;
-  right: 6px;
+  top: 4px;
+  right: 4px;
   background: rgba(255, 255, 255, 0.9);
   border: 1px solid var(--aura-gray-border);
   color: var(--aura-dark-velvet);
@@ -379,11 +416,9 @@ select {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 14px;
-  font-weight: bold;
-  transform: rotate(45deg);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  transition: all 0.2s ease;
+  font-size: 12px;
+  line-height: 1;
+  transition: all var(--aura-transition-fast);
 }
 
 .delete-img-btn:hover {
@@ -391,24 +426,23 @@ select {
   color: #FFFFFF;
 }
 
-/* Call-to-Action Buttons */
+/* Action Buttons */
 .actions {
   display: flex;
-  gap: 16px;
-  margin-top: 20px;
+  gap: 12px;
 }
 
 .actions button {
   flex: 1;
-  padding: 16px;
+  padding: 14px 20px;
   border-radius: 8px;
   font-family: 'Cinzel', serif;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 1.5px;
+  letter-spacing: 1.2px;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all var(--aura-transition-fast);
 }
 
 .btn-primary {
@@ -420,7 +454,7 @@ select {
 .btn-primary:hover:not(:disabled) {
   background: var(--aura-accent-gold);
   border-color: var(--aura-accent-gold);
-  box-shadow: 0 4px 15px rgba(201, 168, 106, 0.3);
+  box-shadow: 0 4px 15px rgba(201, 168, 106, 0.25);
 }
 
 .btn-secondary {
@@ -438,29 +472,19 @@ select {
   cursor: not-allowed;
 }
 
-/* Status Notifications */
+/* Upload Progress & Banners */
 .error-banner {
   background: var(--aura-error-bg);
   border: 1px solid var(--aura-error-border);
   color: var(--aura-error-text);
-  padding: 14px 20px;
+  padding: 12px 16px;
   border-radius: 8px;
-  margin-bottom: 24px;
   font-size: 13px;
   font-weight: 500;
-  letter-spacing: 0.3px;
 }
 
-.field-note {
-  font-size: 11px;
-  color: var(--aura-muted-text);
-  margin-top: 4px;
-  font-style: italic;
-}
-
-/* Upload Progress Indicator */
 .progress-container {
-  margin: 16px 0;
+  margin: 12px 0;
 }
 
 .progress-bar {
@@ -475,7 +499,7 @@ select {
   height: 100%;
   background: var(--aura-accent-gold);
   border-radius: 2px;
-  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: width 0.2s linear;
 }
 
 .progress-text {
@@ -483,48 +507,78 @@ select {
   text-align: center;
   font-size: 11px;
   color: var(--aura-accent-gold);
-  margin-top: 6px;
-  letter-spacing: 0.5px;
+  margin-top: 4px;
 }
 
-/* Dynamic Atelier Loading Animation */
-.pf-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 450px;
-  background-color: var(--aura-offwhite-bg);
+.field-note {
+  font-size: 11px;
   color: var(--aura-muted-text);
-  font-family: 'Cinzel', serif;
-  font-size: 14px;
-  gap: 16px;
-  letter-spacing: 2px;
+  margin-top: 4px;
+  font-style: italic;
 }
 
-.spinner {
-  width: 40px;
-  height: 40px;
+/* Skeleton Loading Loader */
+.pf-skeleton {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.pf-inline-loader {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
   border: 2px solid var(--aura-gold-light);
-  border-top: 2px solid var(--aura-accent-gold);
+  border-top-color: var(--aura-accent-gold);
   border-radius: 50%;
-  animation: spin 1s linear infinite;
+  animation: spin 0.8s linear infinite;
+  margin-left: 8px;
+  vertical-align: middle;
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  to { transform: rotate(360deg); }
 }
 
-/* Responsive Adaptive Sizing */
-@media (max-width: 950px) {
+/* Comprehensive Responsive Breakpoints */
+@media (max-width: 1024px) {
   .product-form {
     grid-template-columns: 1fr;
-    padding: 16px;
     gap: 20px;
+    padding: 20px;
   }
 
   .form-right {
     position: static;
+  }
+}
+
+@media (max-width: 640px) {
+  .product-form {
+    padding: 12px;
+  }
+
+  .card {
+    padding: 18px;
+  }
+
+  .grid2 {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  input[type="text"],
+  input[type="number"],
+  textarea,
+  select {
+    font-size: 16px; /* Prevents auto-zoom on mobile safari */
+    padding: 12px;
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+
+  .actions button {
+    width: 100%;
   }
 }
