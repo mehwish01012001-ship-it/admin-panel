@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import {
   FiAlertTriangle,
   FiCalendar,
-  FiDollarSign,
   FiPackage,
   FiSearch,
   FiShoppingBag,
@@ -27,6 +26,11 @@ import { customerService } from "../../services/customerService";
 import { orderService } from "../../services/orderService";
 import { productService } from "../../services/productService";
 import "./Dashboard.css";
+
+// Rupee Custom Icon for Stat Card
+const FiRupee = () => (
+  <span style={{ fontWeight: 800, fontSize: "18px", lineHeight: 1 }}>Rs.</span>
+);
 
 const CountUp = CountUpModule.default?.default || CountUpModule.default || CountUpModule;
 const PIE_COLORS = ["#10B981", "#4F46E5", "#C9A86A", "#EF4444"];
@@ -59,6 +63,8 @@ const Dashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
+    let isMounted = true;
+
     const loadDashboardData = async () => {
       setLoading(true);
       setError("");
@@ -70,18 +76,28 @@ const Dashboard = () => {
           customerService.getAllCustomers(),
         ]);
 
-        setProducts(getListFromResponse(productsResponse, "products"));
-        setOrders(getListFromResponse(ordersResponse, "orders"));
-        setCustomers(getListFromResponse(customersResponse, "customers"));
+        if (isMounted) {
+          setProducts(getListFromResponse(productsResponse, "products"));
+          setOrders(getListFromResponse(ordersResponse, "orders"));
+          setCustomers(getListFromResponse(customersResponse, "customers"));
+        }
       } catch (err) {
         console.error(err);
-        setError("Unable to load live dashboard analytics.");
+        if (isMounted) {
+          setError("Unable to load live dashboard analytics.");
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     loadDashboardData();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const filteredOrdersByTime = useMemo(() => {
@@ -108,8 +124,8 @@ const Dashboard = () => {
       {
         title: "Total Revenue",
         value: totalRevenue,
-        icon: <FiDollarSign />,
-        prefix: "Rs.",
+        icon: <FiRupee />,
+        prefix: "Rs. ",
         color: "#C9A86A",
       },
       {
@@ -264,7 +280,15 @@ const Dashboard = () => {
         </div>
 
         <div className="dashboard-actions">
-          
+          <div className="search-field">
+            <FiSearch className="search-icon" />
+            <input
+              type="text"
+              placeholder="Search orders or customers..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
 
           <label className="select-field">
             <FiCalendar />
@@ -290,7 +314,7 @@ const Dashboard = () => {
             <p className="metric-title">{item.title}</p>
             <h2 className="metric-value">
               {item.prefix}
-              <CountUp end={item.value} decimals={item.prefix === "Rs." ? 2 : 0} separator="," duration={1.4} />
+              <CountUp end={item.value} decimals={item.prefix.includes("Rs.") ? 2 : 0} separator="," duration={1.2} />
             </h2>
             <div className="metric-accent" style={{ backgroundColor: item.color }} />
           </motion.article>
@@ -325,7 +349,10 @@ const Dashboard = () => {
                 <CartesianGrid stroke="#F1F5F9" strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="name" tickLine={false} axisLine={false} stroke="#94A3B8" fontSize={11} />
                 <YAxis tickLine={false} axisLine={false} stroke="#94A3B8" fontSize={11} />
-                <Tooltip contentStyle={{ background: "#0F172A", color: "#FFF", borderRadius: "12px", border: "none" }} />
+                <Tooltip 
+                  formatter={(value) => [`Rs. ${Number(value).toLocaleString()}`, ""]}
+                  contentStyle={{ background: "#0F172A", color: "#FFF", borderRadius: "12px", border: "none" }} 
+                />
                 <Area type="monotone" dataKey="Revenue" stroke="#C9A86A" strokeWidth={2.5} fillOpacity={1} fill="url(#revenueGradient)" />
                 <Area type="monotone" dataKey="Profit" stroke="#4F46E5" strokeWidth={2} fillOpacity={1} fill="url(#profitGradient)" />
               </AreaChart>
