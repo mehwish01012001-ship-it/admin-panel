@@ -45,8 +45,9 @@ export default function Orders() {
       return pathString;
     }
 
-    const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-    return `${apiBaseUrl.replace(/\/$/, '')}/${pathString.replace(/^\/+/, '')}`;
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'https://backend-production-a2eb.up.railway.app/api';
+    const apiOrigin = apiBaseUrl.replace(/\/api\/?$/, '');
+    return `${apiOrigin.replace(/\/$/, '')}/${pathString.replace(/^\/+/, '')}`;
   }, []);
 
   // Shipping Address Formatter
