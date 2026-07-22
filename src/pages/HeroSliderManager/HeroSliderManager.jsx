@@ -139,7 +139,7 @@ const HeroSliderManager = () => {
               onChange={handleChange}
               placeholder="Slide Title"
               className="hsm-input"
-              required
+              
             />
           </div>
 
@@ -162,7 +162,7 @@ const HeroSliderManager = () => {
               placeholder="Description..."
               rows={3}
               className="hsm-textarea"
-              required
+              
             />
           </div>
 
