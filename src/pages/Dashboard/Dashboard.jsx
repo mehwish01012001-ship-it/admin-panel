@@ -27,7 +27,6 @@ import { orderService } from "../../services/orderService";
 import { productService } from "../../services/productService";
 import "./Dashboard.css";
 
-// Rupee Custom Icon for Stat Card
 const FiRupee = () => (
   <span style={{ fontWeight: 800, fontSize: "18px", lineHeight: 1 }}>Rs.</span>
 );
@@ -41,11 +40,9 @@ const getListFromResponse = (response, fallbackKey) => {
   if (Array.isArray(payload)) {
     return payload;
   }
-
   if (Array.isArray(payload?.[fallbackKey])) {
     return payload[fallbackKey];
   }
-
   if (Array.isArray(payload?.data?.[fallbackKey])) {
     return payload.data[fallbackKey];
   }
@@ -57,7 +54,7 @@ const Dashboard = () => {
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [customers, setCustomers] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [timeRange, setTimeRange] = useState(3);
   const [searchQuery, setSearchQuery] = useState("");
@@ -66,9 +63,6 @@ const Dashboard = () => {
     let isMounted = true;
 
     const loadDashboardData = async () => {
-      setLoading(true);
-      setError("");
-
       try {
         const [productsResponse, ordersResponse, customersResponse] = await Promise.all([
           productService.getAllProducts({ limit: 200 }),
@@ -105,10 +99,7 @@ const Dashboard = () => {
     cutoffDate.setMonth(cutoffDate.getMonth() - timeRange);
 
     return orders.filter((order) => {
-      if (!order.createdAt) {
-        return false;
-      }
-
+      if (!order.createdAt) return false;
       const createdAt = new Date(order.createdAt);
       return !Number.isNaN(createdAt.getTime()) && createdAt >= cutoffDate;
     });
@@ -157,9 +148,7 @@ const Dashboard = () => {
 
     filteredOrdersByTime.forEach((order) => {
       const date = order.createdAt ? new Date(order.createdAt) : null;
-      if (!date || Number.isNaN(date.getTime())) {
-        return;
-      }
+      if (!date || Number.isNaN(date.getTime())) return;
 
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
       const monthLabel = date.toLocaleString("en-US", { month: "short", year: "2-digit" });
@@ -232,9 +221,7 @@ const Dashboard = () => {
 
   const filteredRecentOrders = useMemo(() => {
     const baseOrders = orders.slice(0, 8);
-    if (!searchQuery.trim()) {
-      return baseOrders;
-    }
+    if (!searchQuery.trim()) return baseOrders;
 
     const query = searchQuery.toLowerCase();
     return orders
@@ -245,28 +232,6 @@ const Dashboard = () => {
       })
       .slice(0, 8);
   }, [orders, searchQuery]);
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.05, delayChildren: 0.08 },
-    },
-  };
-
-  const cardVariants = {
-    hidden: { opacity: 0, y: 16 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" } },
-  };
-
-  if (loading) {
-    return (
-      <div className="dashboard-loading-state">
-        <div className="spinner" />
-        <p>Syncing live operational data...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="dashboard-shell">
@@ -302,19 +267,24 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <motion.div className="metrics-grid" variants={containerVariants} initial="hidden" animate="visible">
+      <motion.div className="metrics-grid">
         {stats.map((item, index) => (
-          <motion.article key={index} className="metric-card" variants={cardVariants} whileHover={{ y: -4, scale: 1.01 }}>
+          <motion.article key={index} className="metric-card" whileHover={{ y: -4 }}>
             <div className="metric-card-header">
               <div className="metric-icon" style={{ backgroundColor: `${item.color}15`, color: item.color }}>
                 {item.icon}
               </div>
-              <span className="metric-pill">Live</span>
             </div>
             <p className="metric-title">{item.title}</p>
             <h2 className="metric-value">
-              {item.prefix}
-              <CountUp end={item.value} decimals={item.prefix.includes("Rs.") ? 2 : 0} separator="," duration={1.2} />
+              {loading ? (
+                <span className="skeleton-box" style={{ width: "90px", height: "28px" }} />
+              ) : (
+                <>
+                  {item.prefix}
+                  <CountUp end={item.value} decimals={item.prefix.includes("Rs.") ? 2 : 0} separator="," duration={1} />
+                </>
+              )}
             </h2>
             <div className="metric-accent" style={{ backgroundColor: item.color }} />
           </motion.article>
@@ -349,9 +319,9 @@ const Dashboard = () => {
                 <CartesianGrid stroke="#F1F5F9" strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="name" tickLine={false} axisLine={false} stroke="#94A3B8" fontSize={11} />
                 <YAxis tickLine={false} axisLine={false} stroke="#94A3B8" fontSize={11} />
-                <Tooltip 
+                <Tooltip
                   formatter={(value) => [`Rs. ${Number(value).toLocaleString()}`, ""]}
-                  contentStyle={{ background: "#0F172A", color: "#FFF", borderRadius: "12px", border: "none" }} 
+                  contentStyle={{ background: "#0F172A", color: "#FFF", borderRadius: "12px", border: "none" }}
                 />
                 <Area type="monotone" dataKey="Revenue" stroke="#C9A86A" strokeWidth={2.5} fillOpacity={1} fill="url(#revenueGradient)" />
                 <Area type="monotone" dataKey="Profit" stroke="#4F46E5" strokeWidth={2} fillOpacity={1} fill="url(#profitGradient)" />
@@ -393,7 +363,7 @@ const Dashboard = () => {
         </section>
       </div>
 
-      {lowStockProducts.length > 0 ? (
+      {!loading && lowStockProducts.length > 0 ? (
         <section className="alert-card">
           <div className="alert-header">
             <div className="alert-icon">
@@ -436,7 +406,16 @@ const Dashboard = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredRecentOrders.length > 0 ? (
+                {loading ? (
+                  [...Array(4)].map((_, idx) => (
+                    <tr key={idx}>
+                      <td><span className="skeleton-box" style={{ width: "60px", height: "16px" }} /></td>
+                      <td><span className="skeleton-box" style={{ width: "120px", height: "16px" }} /></td>
+                      <td><span className="skeleton-box" style={{ width: "80px", height: "16px" }} /></td>
+                      <td><span className="skeleton-box" style={{ width: "70px", height: "20px" }} /></td>
+                    </tr>
+                  ))
+                ) : filteredRecentOrders.length > 0 ? (
                   filteredRecentOrders.map((order, index) => {
                     const orderId = order._id || order.id || `ord-${index + 1}`;
                     const customerName = order.user
@@ -485,7 +464,17 @@ const Dashboard = () => {
           </div>
 
           <div className="ranking-list">
-            {topProducts.length > 0 ? (
+            {loading ? (
+              [...Array(3)].map((_, idx) => (
+                <div className="ranking-item" key={idx}>
+                  <span className="skeleton-box" style={{ width: "36px", height: "36px", borderRadius: "50%" }} />
+                  <div className="ranking-details">
+                    <span className="skeleton-box" style={{ width: "120px", height: "14px" }} />
+                    <span className="skeleton-box" style={{ width: "70px", height: "12px", marginTop: "4px" }} />
+                  </div>
+                </div>
+              ))
+            ) : topProducts.length > 0 ? (
               topProducts.map((product, index) => (
                 <div className="ranking-item" key={`${product.name}-${index}`}>
                   <div className="ranking-badge">#{index + 1}</div>
@@ -493,7 +482,9 @@ const Dashboard = () => {
                     <strong>{product.name}</strong>
                     <span>{product.sales} items sold</span>
                   </div>
-                  <div className="ranking-value">Rs. {Number(product.revenue).toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
+                  <div className="ranking-value">
+                    Rs. {Number(product.revenue).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  </div>
                 </div>
               ))
             ) : (
