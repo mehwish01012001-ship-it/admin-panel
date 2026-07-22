@@ -42,12 +42,12 @@
   font-weight: 300;
 }
 
-/* .page-content {
+.page-content {
   display: flex;
   justify-content: center;
   width: 100%;
   animation: fadeSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
-} */
+}
 
 @keyframes fadeSlideDown {
   from {

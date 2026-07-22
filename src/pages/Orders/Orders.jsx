@@ -1,243 +1,264 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { FiSearch, FiEye, FiShoppingCart, FiX, FiChevronDown, FiChevronUp } from 'react-icons/fi';
-import './Orders.css';
 import { orderService } from '../../services/orderService';
+import './Orders.css';
 
-const statusOptions = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
-const paymentStatusOptions = ['pending', 'paid', 'failed', 'refunded'];
+const STATUS_OPTIONS = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+const PAYMENT_STATUS_OPTIONS = ['pending', 'paid', 'failed', 'refunded'];
 
 export default function Orders() {
   const location = useLocation();
+
   const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [search, setSearch] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [updatingOrderId, setUpdatingOrderId] = useState('');
-  const [expandedItemId, setExpandedItemId] = useState('');
+  const [updatingOrderId, setUpdatingOrderId] = useState(null);
+  const [expandedItemId, setExpandedItemId] = useState(null);
 
-  const fetchOrders = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const response = await orderService.getAllOrders({ limit: 100 });
-      const fetchedOrders = response?.data?.orders || [];
-      setOrders(fetchedOrders);
-
-      const triggeredOrderId = location?.state?.orderId;
-      if (triggeredOrderId) {
-        const matchedOrder = fetchedOrders.find(
-          (o) => (o._id || o.id) === triggeredOrderId
-        );
-        if (matchedOrder) {
-          setSelectedOrder(matchedOrder);
-        }
-      }
-    } catch (err) {
-      console.error(err);
-      setError('Unable to load orders.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Load orders efficiently on mount
   useEffect(() => {
+    let isMounted = true;
+
+    const fetchOrders = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const response = await orderService.getAllOrders({ limit: 100 });
+        if (!isMounted) return;
+
+        const fetchedOrders = response?.data?.orders || [];
+        setOrders(fetchedOrders);
+
+        // Auto-select trigger order if navigation passed an orderId in location state
+        const triggeredOrderId = location?.state?.orderId;
+        if (triggeredOrderId) {
+          const matched = fetchedOrders.find(
+            (o) => (o._id || o.id) === triggeredOrderId
+          );
+          if (matched) setSelectedOrder(matched);
+        }
+      } catch (err) {
+        if (isMounted) setError('Unable to load orders. Please try again.');
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
     fetchOrders();
+
+    return () => {
+      isMounted = false;
+    };
   }, [location?.state?.orderId]);
 
-  const handleStatusChange = async (orderId, field, nextStatus) => {
+  // Handle status update with optimistic UI update
+  const handleStatusChange = useCallback(async (orderId, field, nextStatus) => {
     if (!orderId || !nextStatus) return;
+
     setUpdatingOrderId(orderId);
+
+    // Backup current state for rollback on error
+    const previousOrders = [...orders];
+
+    // Optimistic state update
+    setOrders((prevOrders) =>
+      prevOrders.map((order) => {
+        const currentId = order._id || order.id;
+        return currentId === orderId ? { ...order, [field]: nextStatus } : order;
+      })
+    );
+
+    if (selectedOrder && (selectedOrder._id || selectedOrder.id) === orderId) {
+      setSelectedOrder((prev) => (prev ? { ...prev, [field]: nextStatus } : null));
+    }
+
     try {
       await orderService.updateOrderStatus(orderId, { [field]: nextStatus });
-      
-      setOrders((prevOrders) =>
-        prevOrders.map((order) =>
-          (order._id || order.id) === orderId ? { ...order, [field]: nextStatus } : order
-        )
-      );
-
-      if (selectedOrder && (selectedOrder._id || selectedOrder.id) === orderId) {
-        setSelectedOrder((prev) => ({ ...prev, [field]: nextStatus }));
-      }
     } catch (err) {
-      console.error(err);
-      setError('Unable to update order status.');
+      // Revert on API failure
+      setOrders(previousOrders);
+      setError('Failed to update status. Reverted changes.');
     } finally {
-      setUpdatingOrderId('');
+      setUpdatingOrderId(null);
     }
-  };
+  }, [orders, selectedOrder]);
 
-  const getImageUrl = (value) => {
-    if (!value) return '';
+  // Format dynamic image URLs safely
+  const getImageUrl = useCallback((value) => {
+    if (!value) return '/placeholder.png';
     if (Array.isArray(value)) return getImageUrl(value[0]);
     if (typeof value === 'object') return getImageUrl(value.url || value.path || value.src || '');
-    const stringValue = String(value);
-    if (stringValue.startsWith('http://') || stringValue.startsWith('https://')) return stringValue;
-    const base = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-    return `${base.replace(/\/$/, '')}/${stringValue.replace(/^\/+/, '')}`;
-  };
 
-  const formatAddress = (address) => {
+    const str = String(value);
+    if (str.startsWith('http://') || str.startsWith('https://')) return str;
+
+    const baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
+    return `${baseUrl}/${str.replace(/^\/+/, '')}`;
+  }, []);
+
+  // Format full shipping address
+  const formatAddress = useCallback((address) => {
     if (!address) return 'Not provided';
-    return [
-      address.fullName,
-      address.addressLine1,
-      address.addressLine2,
-      address.city,
-      address.state,
-      address.zipCode,
-      address.country
-    ].filter(Boolean).join(', ');
-  };
+    const { fullName, addressLine1, addressLine2, city, state, zipCode, country } = address;
+    return [fullName, addressLine1, addressLine2, city, state, zipCode, country]
+      .filter(Boolean)
+      .join(', ');
+  }, []);
 
-  const filteredOrders = orders.filter((order) => {
-    const orderId = order._id || order.id || '';
-    const orderNum = order.orderNumber || '';
-    const fName = order.user?.firstName || '';
-    const lName = order.user?.lastName || '';
-    const fullName = `${fName} ${lName}`.toLowerCase();
+  // Memoized client-side search & filtering to prevent recalculation lag
+  const filteredOrders = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
 
-    const matchesSearch =
-      orderId.toLowerCase().includes(search.toLowerCase()) ||
-      orderNum.toLowerCase().includes(search.toLowerCase()) ||
-      fullName.includes(search.toLowerCase());
+    return orders.filter((order) => {
+      const orderId = (order._id || order.id || '').toLowerCase();
+      const orderNum = (order.orderNumber || '').toLowerCase();
+      const customerName = `${order.user?.firstName || ''} ${order.user?.lastName || ''}`.toLowerCase();
 
-    const matchesStatus =
-      filterStatus === 'all' ||
-      order.orderStatus?.toLowerCase() === filterStatus.toLowerCase();
+      const matchesSearch = !query || orderId.includes(query) || orderNum.includes(query) || customerName.includes(query);
+      const matchesStatus = selectedStatus === 'all' || (order.orderStatus || '').toLowerCase() === selectedStatus.toLowerCase();
 
-    return matchesSearch && matchesStatus;
-  });
+      return matchesSearch && matchesStatus;
+    });
+  }, [orders, searchQuery, selectedStatus]);
 
-  const totals = filteredOrders.reduce(
-    (acc, order) => {
-      acc.items += order.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
-      acc.amount += Number(order.totalAmount || 0);
-      return acc;
-    },
-    { items: 0, amount: 0 }
-  );
+  // Derived dashboard analytics totals
+  const totals = useMemo(() => {
+    return filteredOrders.reduce(
+      (acc, order) => {
+        const itemQuantity = order.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
+        acc.items += itemQuantity;
+        acc.amount += Number(order.totalAmount || 0);
+        return acc;
+      },
+      { items: 0, amount: 0 }
+    );
+  }, [filteredOrders]);
 
   return (
-    <div className="orders-container">
-      {/* Header Summary */}
-      <div className="orders-header-row">
-        <div>
-          <h1 className="dashboard-title">Orders Dashboard</h1>
-          <p className="dashboard-subtitle">{orders.length} total raw operational entries</p>
+    <div className="orders-wrapper">
+      {/* Header & Metrics */}
+      <header className="orders-header">
+        <div className="header-title-group">
+          <h1 className="page-title">Orders Dashboard</h1>
+          <p className="page-subtitle">{orders.length} total operational entries</p>
         </div>
 
-          <div className="metrics-summary">
-          <div className="metric-pill">
-            <span className="metric-val">{filteredOrders.length}</span>
-            <small className="metric-lbl">Filtered Orders</small>
+        <div className="metrics-grid">
+          <div className="metric-card">
+            <span className="metric-value">{filteredOrders.length}</span>
+            <span className="metric-label">Filtered</span>
           </div>
-          <div className="metric-pill">
-            <span className="metric-val">{totals.items}</span>
-            <small className="metric-lbl">Total Items</small>
+          <div className="metric-card">
+            <span className="metric-value">{totals.items}</span>
+            <span className="metric-label">Total Items</span>
           </div>
-          <div className="metric-pill">
-            <span className="metric-val">Rs. {totals.amount.toFixed(2)}</span>
-            <small className="metric-lbl">Total Volume</small>
+          <div className="metric-card">
+            <span className="metric-value">Rs. {totals.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+            <span className="metric-label">Total Volume</span>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Control Filters Block */}
-      <div className="filter-controls-bar">
-        <div className="search-box-wrapper">
-          <FiSearch className="search-icon-inside" size={18} />
+      {/* Control Bar: Search & Status Tabs */}
+      <section className="filter-bar">
+        <div className="search-input-wrapper">
+          <FiSearch className="search-icon" size={18} />
           <input
-            type="text"
-            placeholder="Search order number or customer name..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="native-search-input"
+            type="search"
+            placeholder="Search order ID or customer..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="search-input"
           />
         </div>
-        <div className="status-horizontal-tabs">
-          {['all', ...statusOptions].map((status) => (
+
+        <nav className="status-tabs" aria-label="Order status filter">
+          {['all', ...STATUS_OPTIONS].map((status) => (
             <button
               key={status}
-              onClick={() => setFilterStatus(status)}
-              className={`tab-filter-btn ${filterStatus === status ? 'active' : ''}`}
+              type="button"
+              onClick={() => setSelectedStatus(status)}
+              className={`tab-btn ${selectedStatus === status ? 'active' : ''}`}
             >
               {status}
             </button>
           ))}
-        </div>
-      </div>
+        </nav>
+      </section>
 
-      {/* Primary Table Box */}
-      <div className="orders-table-wrapper">
+      {/* Orders Data List / Table */}
+      <main className="orders-content">
         {loading ? (
-          <div className="table-state-msg">
-            <div className="ui-loading-spinner" />
-            <span>Fetching secure database data records...</span>
+          <div className="feedback-state">
+            <div className="spinner" />
+            <p>Loading dashboard orders...</p>
           </div>
         ) : error ? (
-          <div className="table-state-msg state-error">{error}</div>
+          <div className="feedback-state error-state">
+            <p>{error}</p>
+          </div>
         ) : filteredOrders.length === 0 ? (
-          <div className="table-state-msg">
-            <FiShoppingCart size={32} className="muted-icon" />
-            <span>No orders match your criteria.</span>
+          <div className="feedback-state">
+            <FiShoppingCart size={36} className="empty-icon" />
+            <p>No orders matched your current filters.</p>
           </div>
         ) : (
-          <div className="responsive-table-scroll">
-            <table className="custom-dashboard-table">
+          <div className="table-responsive">
+            <table className="orders-table">
               <thead>
                 <tr>
                   <th>Order</th>
                   <th>Customer</th>
-                  <th className="hide-md">Date</th>
-                  <th className="hide-lg">Payment Status</th>
+                  <th className="col-hide-mobile">Date</th>
+                  <th className="col-hide-tablet">Payment</th>
                   <th>Status</th>
                   <th className="text-right">Total</th>
-                  <th className="text-right">Actions</th>
+                  <th className="text-right">Action</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredOrders.map((order) => {
                   const id = order._id || order.id;
-                  const cName = order.user
+                  const customerName = order.user
                     ? `${order.user.firstName || ''} ${order.user.lastName || ''}`.trim()
-                    : 'Unknown User';
-                  
+                    : 'Guest User';
+
                   return (
                     <tr key={id}>
-                      <td className="font-bold-dark">
-                        <span>{order.orderNumber || id}</span>
-                        <div className="sub-id-hash">#{id?.slice(-6)}</div>
+                      <td className="font-medium">
+                        <div>{order.orderNumber || id}</div>
+                        <div className="sub-text">#{id?.slice(-6)}</div>
                       </td>
                       <td>
-                        <div className="customer-cell-primary">{cName}</div>
-                        <div className="customer-cell-sub">{order.user?.email || 'No email'}</div>
+                        <div className="font-medium">{customerName}</div>
+                        <div className="sub-text">{order.user?.email || 'No email provided'}</div>
                       </td>
-                      <td className="hide-md plain-muted-text">
+                      <td className="col-hide-mobile sub-text">
                         {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : '-'}
                       </td>
-                      <td className="hide-lg">
-                        <span className={`static-badge status-${order.paymentStatus?.toLowerCase() || 'pending'}`}>
+                      <td className="col-hide-tablet">
+                        <span className={`badge badge-${order.paymentStatus?.toLowerCase() || 'pending'}`}>
                           {order.paymentStatus || 'Pending'}
                         </span>
                       </td>
                       <td>
-                        <span className={`static-badge status-${order.orderStatus?.toLowerCase() || 'pending'}`}>
+                        <span className={`badge badge-${order.orderStatus?.toLowerCase() || 'pending'}`}>
                           {order.orderStatus || 'Pending'}
                         </span>
                       </td>
-                      <td className="text-right highlight-amount-cell">
+                      <td className="text-right font-bold">
                         Rs. {Number(order.totalAmount || 0).toFixed(2)}
                       </td>
                       <td className="text-right">
                         <button
                           type="button"
-                          className="action-view-eye-btn"
+                          className="action-btn"
                           onClick={() => setSelectedOrder(order)}
-                          title="View Details"
+                          title="View Order Details"
                         >
                           <FiEye size={16} />
                         </button>
@@ -249,37 +270,45 @@ export default function Orders() {
             </table>
           </div>
         )}
-      </div>
+      </main>
 
-      {/* Immersive Right-Side/Center Overlay Detail Modal */}
+      {/* Modal Detail View */}
       {selectedOrder && (
-        <div className="modal-backdrop-overlay" onClick={() => setSelectedOrder(null)}>
-          <div className="modal-body-content-card" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-top-header">
+        <div className="modal-backdrop" onClick={() => setSelectedOrder(null)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            <header className="modal-header">
               <div>
-                <h3>Order Details View</h3>
-                <span className="order-header-hash-lbl">
+                <h2>Order Details</h2>
+                <span className="sub-text">
                   ID: {selectedOrder.orderNumber || (selectedOrder._id || selectedOrder.id)}
                 </span>
               </div>
-              <button className="close-modal-x-btn" onClick={() => setSelectedOrder(null)}>
+              <button
+                type="button"
+                className="close-btn"
+                onClick={() => setSelectedOrder(null)}
+                aria-label="Close modal"
+              >
                 <FiX size={20} />
               </button>
-            </div>
+            </header>
 
-            <div className="modal-scrollable-inner-grid">
-              {/* Management Control Center Card */}
-              <div className="panel-info-card highlighted-panel">
-                <h4>Status Management</h4>
-                <div className="interactive-select-row">
-                  <div className="control-input-stack">
-                    <label>Order Track Status</label>
+            <div className="modal-body">
+              {/* Quick Status Controls */}
+              <div className="detail-panel highlight-panel">
+                <h3>Update Order Status</h3>
+                <div className="select-group">
+                  <div className="field-stack">
+                    <label htmlFor="order-status-select">Order Status</label>
                     <select
+                      id="order-status-select"
                       value={selectedOrder.orderStatus || 'pending'}
                       disabled={updatingOrderId === (selectedOrder._id || selectedOrder.id)}
-                      onChange={(e) => handleStatusChange(selectedOrder._id || selectedOrder.id, 'orderStatus', e.target.value)}
+                      onChange={(e) =>
+                        handleStatusChange(selectedOrder._id || selectedOrder.id, 'orderStatus', e.target.value)
+                      }
                     >
-                      {statusOptions.map((opt) => (
+                      {STATUS_OPTIONS.map((opt) => (
                         <option key={opt} value={opt}>
                           {opt.charAt(0).toUpperCase() + opt.slice(1)}
                         </option>
@@ -287,14 +316,17 @@ export default function Orders() {
                     </select>
                   </div>
 
-                  <div className="control-input-stack">
-                    <label>Financial Payment Status</label>
+                  <div className="field-stack">
+                    <label htmlFor="payment-status-select">Payment Status</label>
                     <select
+                      id="payment-status-select"
                       value={selectedOrder.paymentStatus || 'pending'}
                       disabled={updatingOrderId === (selectedOrder._id || selectedOrder.id)}
-                      onChange={(e) => handleStatusChange(selectedOrder._id || selectedOrder.id, 'paymentStatus', e.target.value)}
+                      onChange={(e) =>
+                        handleStatusChange(selectedOrder._id || selectedOrder.id, 'paymentStatus', e.target.value)
+                      }
                     >
-                      {paymentStatusOptions.map((opt) => (
+                      {PAYMENT_STATUS_OPTIONS.map((opt) => (
                         <option key={opt} value={opt}>
                           {opt.charAt(0).toUpperCase() + opt.slice(1)}
                         </option>
@@ -304,83 +336,80 @@ export default function Orders() {
                 </div>
               </div>
 
-              {/* Grid block info details */}
-              <div className="three-column-detail-layout">
-                <div className="panel-info-card">
-                  <h4>Customer Detail</h4>
-                  <p><strong>Name:</strong> {selectedOrder.user ? `${selectedOrder.user.firstName || ''} ${selectedOrder.user.lastName || ''}`.trim() : 'Unknown'}</p>
+              {/* Customer and Financial Information */}
+              <div className="details-grid">
+                <div className="detail-panel">
+                  <h3>Customer Details</h3>
+                  <p><strong>Name:</strong> {selectedOrder.user ? `${selectedOrder.user.firstName || ''} ${selectedOrder.user.lastName || ''}`.trim() : 'Guest'}</p>
                   <p><strong>Email:</strong> {selectedOrder.user?.email || 'N/A'}</p>
-                  <p><strong>Phone:</strong> {selectedOrder.shippingAddress?.phone || 'Not Provided'}</p>
-                  <p className="address-block-para"><strong>Shipping Destination:</strong> {formatAddress(selectedOrder.shippingAddress)}</p>
+                  <p><strong>Phone:</strong> {selectedOrder.shippingAddress?.phone || 'Not provided'}</p>
+                  <p><strong>Shipping:</strong> {formatAddress(selectedOrder.shippingAddress)}</p>
                 </div>
 
-                <div className="panel-info-card">
-                  <h4>Financial Data</h4>
+                <div className="detail-panel">
+                  <h3>Financial Details</h3>
                   <p><strong>Method:</strong> {selectedOrder.paymentMethod || 'Not provided'}</p>
-                  <p><strong>Transaction Account:</strong> {selectedOrder.paymentNumber || 'Not provided'}</p>
-                  <p><strong>Total Gross Value:</strong> Rs. {Number(selectedOrder.totalAmount || 0).toFixed(2)}</p>
-                  <p><strong>System Date:</strong> {selectedOrder.createdAt ? new Date(selectedOrder.createdAt).toLocaleString() : '-'}</p>
+                  <p><strong>Account:</strong> {selectedOrder.paymentNumber || 'N/A'}</p>
+                  <p><strong>Total Amount:</strong> Rs. {Number(selectedOrder.totalAmount || 0).toFixed(2)}</p>
+                  <p><strong>Order Date:</strong> {selectedOrder.createdAt ? new Date(selectedOrder.createdAt).toLocaleString() : '-'}</p>
                 </div>
 
-                <div className="panel-info-card">
-                  <h4>Notes</h4>
-                  <div className="notes-display-box">
-                    {selectedOrder.notes || 'No administrative memos left on this checkout profile.'}
+                <div className="detail-panel">
+                  <h3>Admin Notes</h3>
+                  <div className="notes-box">
+                    {selectedOrder.notes || 'No operational notes attached to this order.'}
                   </div>
                 </div>
               </div>
 
-              {/* Items Section Container */}
-              <div className="panel-info-card">
-                <h4 style={{ marginBottom: '12px' }}>Purchased Stock Allocation Items</h4>
-                <div className="modal-items-list-container">
+              {/* Purchased Items List */}
+              <div className="detail-panel">
+                <h3>Order Items</h3>
+                <div className="items-list">
                   {(selectedOrder.items || []).map((item, index) => {
                     const prod = item.product;
-                    const fallbackImg = prod?.images?.[0] || prod?.image || '';
                     const itemKey = `${selectedOrder._id || selectedOrder.id}-${index}`;
-                    const isItemExpanded = expandedItemId === itemKey;
+                    const isExpanded = expandedItemId === itemKey;
 
                     return (
-                      <div key={itemKey} className="modal-nested-item-card">
-                        <div className="nested-item-header-row">
-                          <div className="nested-item-left-main">
+                      <div key={itemKey} className="item-card">
+                        <div className="item-header">
+                          <div className="item-info">
                             <img
-                              src={getImageUrl(fallbackImg)}
-                              alt={prod?.name || 'Stock Item'}
-                              className="modal-thumbnail"
+                              src={getImageUrl(prod?.images?.[0] || prod?.image)}
+                              alt={prod?.name || 'Product'}
+                              className="item-thumb"
                               onError={(e) => {
-                                e.currentTarget.src = 'https://via.placeholder.com/60x60?text=No+Image';
+                                e.currentTarget.src = 'https://via.placeholder.com/60?text=No+Image';
                               }}
                             />
                             <div>
-                              <div className="item-name-heading">{prod?.name || `Product Line Entry #${index + 1}`}</div>
-                              <div className="item-meta-row-pills">
-                                <span>Qty: {item.quantity || 1}</span>
-                                <span>Size: {item.size || 'N/A'}</span>
-                                <span>Color: {item.color || 'N/A'}</span>
+                              <div className="font-medium">{prod?.name || `Item #${index + 1}`}</div>
+                              <div className="sub-text">
+                                Qty: {item.quantity || 1} | Size: {item.size || 'N/A'} | Color: {item.color || 'N/A'}
                               </div>
                             </div>
                           </div>
-                          
-                          <div className="nested-item-right-toggle">
-                            <span className="nested-item-price-tag">Rs. {Number(item.price || 0).toFixed(2)}</span>
+
+                          <div className="item-actions">
+                            <span className="font-bold">Rs. {Number(item.price || 0).toFixed(2)}</span>
                             <button
                               type="button"
-                              className="nested-expand-chevron-btn"
-                              onClick={() => setExpandedItemId(isItemExpanded ? '' : itemKey)}
+                              className="icon-btn"
+                              onClick={() => setExpandedItemId(isExpanded ? null : itemKey)}
                             >
-                              {isItemExpanded ? <FiChevronUp size={16} /> : <FiChevronDown size={16} />}
+                              {isExpanded ? <FiChevronUp size={16} /> : <FiChevronDown size={16} />}
                             </button>
                           </div>
                         </div>
 
-                        {isItemExpanded && (
-                          <div className="nested-item-expanded-drawer">
-                            <div className="drawer-grid-spec">
-                              {prod?.sku && <p><strong>SKU Stock Code:</strong> {prod.sku}</p>}
-                              {prod?.brand && <p><strong>Brand Line:</strong> {prod.brand}</p>}
-                              {prod?.category && <p><strong>Categorization:</strong> {prod.category}</p>}
-                              {typeof prod?.stock === 'number' && <p><strong>Warehouse Inventory Counter:</strong> {prod.stock} units left</p>}
+                        {isExpanded && (
+                          <div className="item-drawer">
+                            <div className="drawer-grid">
+                              {prod?.sku && <p><strong>SKU:</strong> {prod.sku}</p>}
+                              {prod?.brand && <p><strong>Brand:</strong> {prod.brand}</p>}
+                              {prod?.category && <p><strong>Category:</strong> {prod.category}</p>}
+                              {typeof prod?.stock === 'number' && <p><strong>In Stock:</strong> {prod.stock} units</p>}
                             </div>
                           </div>
                         )}
@@ -390,14 +419,14 @@ export default function Orders() {
                 </div>
               </div>
 
-              {/* Optional Payment Proof Image Panel View */}
+              {/* Payment Proof Preview if present */}
               {(selectedOrder.paymentReceipt || selectedOrder.paymentProof) && (
-                <div className="panel-info-card">
-                  <h4>Verified Payment Proof Voucher Image</h4>
-                  <div className="receipt-preview-box">
+                <div className="detail-panel">
+                  <h3>Payment Receipt</h3>
+                  <div className="receipt-preview">
                     <img
                       src={getImageUrl(selectedOrder.paymentReceipt || selectedOrder.paymentProof)}
-                      alt="Verified Receipt Scan Attachment"
+                      alt="Payment Receipt Attachment"
                     />
                   </div>
                 </div>
