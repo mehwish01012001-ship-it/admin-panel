@@ -567,7 +567,9 @@
 
   .notification-dropdown {
     width: min(320px, calc(100vw - 24px));
-    right: -8px;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
   }
 }
 

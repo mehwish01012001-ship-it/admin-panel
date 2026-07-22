@@ -54,7 +54,7 @@ const AnimatedValue = ({ value, prefix = '', suffix = '', decimals = 0 }) => {
   const animationFrameRef = useRef(null);
 
   useEffect(() => {
-    const duration = 900;
+    const duration = 600;
     const startTime = performance.now();
     const startValue = displayValue;
 
@@ -84,9 +84,7 @@ const AnimatedValue = ({ value, prefix = '', suffix = '', decimals = 0 }) => {
 
   return (
     <span aria-live="polite">
-      {prefix}
-      {formattedValue}
-      {suffix}
+      {prefix} {formattedValue} {suffix}
     </span>
   );
 };
@@ -118,7 +116,7 @@ const SalesReports = () => {
 
       setOrders(apiOrders);
     } catch (err) {
-      console.error('[Sales Reports] Unable to sync orders:', err);
+      console.error('[Sales Reports] Sync error:', err);
       setError('Unable to synchronize sales data from the backend right now.');
     } finally {
       setLoading(false);
@@ -126,7 +124,7 @@ const SalesReports = () => {
   }, []);
 
   useEffect(() => {
-    fetchOrders();
+    fetchOrders(true);
   }, [fetchOrders]);
 
   const filteredOrders = useMemo(() => {
@@ -202,14 +200,13 @@ const SalesReports = () => {
 
       <motion.header
         className="sales-hero"
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
+        transition={{ duration: 0.3 }}
       >
         <div className="hero-copy">
-         
           <h1>Sales reports</h1>
-          <p>Track revenue momentum, order velocity, and fulfillment health with a premium live admin overview.</p>
+          <p>Track revenue momentum, order velocity, and fulfillment health in real time.</p>
 
           <div className="hero-actions">
             <button
@@ -241,7 +238,7 @@ const SalesReports = () => {
         <div className="hero-insight">
           <span className="insight-pill">{RANGE_MAP[range].label}</span>
           <h2>{formatCurrency(metrics.totalRevenue)}</h2>
-          <p>{metrics.totalOrders} transactions synchronized across the current window</p>
+          <p>{metrics.totalOrders} total transactions in this period</p>
           <div className="insight-track" aria-hidden="true">
             <div className="insight-progress" style={{ width: `${metrics.fulfilledRatio}%` }} />
           </div>
@@ -289,7 +286,7 @@ const SalesReports = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.25 }}
           >
             <section className="stats-grid" aria-label="Key performance indicators">
               <article className="stat-card">
@@ -299,8 +296,8 @@ const SalesReports = () => {
                 <div>
                   <p>Total revenue</p>
                   <h3>
-                        <AnimatedValue value={metrics.totalRevenue} prefix="Rs." />
-                      </h3>
+                    <AnimatedValue value={metrics.totalRevenue} prefix="Rs." />
+                  </h3>
                 </div>
               </article>
 
@@ -323,8 +320,8 @@ const SalesReports = () => {
                 <div>
                   <p>Average order</p>
                   <h3>
-                        <AnimatedValue value={metrics.averageOrderValue} prefix="Rs." />
-                      </h3>
+                    <AnimatedValue value={metrics.averageOrderValue} prefix="Rs." />
+                  </h3>
                 </div>
               </article>
 
@@ -344,13 +341,13 @@ const SalesReports = () => {
                 <div className="panel-heading">
                   <div>
                     <h3>Monthly momentum</h3>
-                    <p>Revenue distribution across the active window</p>
+                    <p>Revenue distribution across active window</p>
                   </div>
                   <span className="chip text-uppercase">Live analytics</span>
                 </div>
 
                 {metrics.monthlyTrend.length === 0 ? (
-                  <div className="empty-state">No chart data available for the selected range.</div>
+                  <div className="empty-state">No sales records available for this range.</div>
                 ) : (
                   <div className="bars-wrapper">
                     {metrics.monthlyTrend.map((item) => (
@@ -360,7 +357,7 @@ const SalesReports = () => {
                             className="bar-fill"
                             initial={{ height: 0 }}
                             animate={{ height: `${Math.max(8, (item.revenue / maxRevenueTrend) * 100)}%` }}
-                            transition={{ duration: 0.5, ease: 'easeOut' }}
+                            transition={{ duration: 0.4, ease: 'easeOut' }}
                           />
                         </div>
                         <span>{item.month}</span>
@@ -375,7 +372,7 @@ const SalesReports = () => {
                 <div className="panel-heading">
                   <div>
                     <h3>Order health status</h3>
-                    <p>Fulfillment signals across the current view</p>
+                    <p>Fulfillment status ratio</p>
                   </div>
                 </div>
 
@@ -412,8 +409,8 @@ const SalesReports = () => {
             <section className="panel recent-orders-panel">
               <div className="panel-heading">
                 <div>
-                  <h3>Recent ledger transactions</h3>
-                  <p>Real-time processing system status records</p>
+                  <h3>Recent orders</h3>
+                  <p>Real-time backend order records</p>
                 </div>
                 <span className="chip soft">{recentOrders.length} records</span>
               </div>
@@ -433,7 +430,7 @@ const SalesReports = () => {
                     {recentOrders.length === 0 ? (
                       <tr>
                         <td colSpan="5" className="empty-state">
-                          No records matching the selected range were found.
+                          No transactions found for the selected range.
                         </td>
                       </tr>
                     ) : (

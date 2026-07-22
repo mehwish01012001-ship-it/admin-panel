@@ -99,7 +99,7 @@ const Topbar = ({
                 "warning",
                 "Low stock alert",
                 `${product.name || "Product"} has only ${product.stock || product.inventory || 0} units left`,
-                "/inventory"
+                product._id ? `/products/edit/${product._id}` : "/inventory"
               )
             );
           });
