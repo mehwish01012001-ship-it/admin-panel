@@ -1,10 +1,8 @@
-import React, { useEffect, useMemo, useState, useCallback } from "react";
-import CountUp from "react-countup";
+import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
   FiAlertTriangle,
   FiCalendar,
-  FiDollarSign,
   FiPackage,
   FiShoppingBag,
   FiTrendingUp,
@@ -22,7 +20,6 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-
 import { customerService } from "../../services/customerService";
 import { orderService } from "../../services/orderService";
 import { productService } from "../../services/productService";
@@ -30,110 +27,68 @@ import "./Dashboard.css";
 
 const PIE_COLORS = ["#10B981", "#4F46E5", "#C9A86A", "#EF4444"];
 
-/**
- * Safely extracts arrays from standardized API envelope responses
- */
-const extractList = (response, key) => {
+const parseApiResponseList = (response, fallbackKey) => {
   const payload = response?.data ?? response;
   if (Array.isArray(payload)) return payload;
-  if (Array.isArray(payload?.[key])) return payload[key];
-  if (Array.isArray(payload?.data?.[key])) return payload.data[key];
+  if (Array.isArray(payload?.[fallbackKey])) return payload[fallbackKey];
+  if (Array.isArray(payload?.data?.[fallbackKey])) return payload.data[fallbackKey];
   return [];
 };
 
-// --- Sub-components for better readibility and rendering control ---
-
-const MetricCard = React.memo(({ title, value, icon, prefix, color, loading, variants }) => (
-  <motion.article
-    className="metric-card"
-    variants={variants}
-    whileHover={{ y: -3, transition: { duration: 0.15 } }}
-  >
-    <div className="metric-card-header">
-      <div className="metric-icon" style={{ backgroundColor: `${color}15`, color }}>
-        {icon}
-      </div>
-      <span className="metric-pill">Live</span>
-    </div>
-    <p className="metric-title">{title}</p>
-    <h2 className="metric-value">
-      {loading ? (
-        <span className="skeleton-text short" />
-      ) : (
-        <>
-          {prefix}
-          <CountUp
-            end={value}
-            decimals={prefix === "Rs." ? 2 : 0}
-            separator=","
-            duration={1.2}
-          />
-        </>
-      )}
-    </h2>
-    <div className="metric-accent" style={{ backgroundColor: color }} />
-  </motion.article>
-));
-
-const SkeletonLoader = () => (
-  <div className="skeleton-wrapper">
-    <div className="skeleton-bar" />
-  </div>
-);
-
-// --- Main Dashboard Component ---
-
 const Dashboard = () => {
-  const [data, setData] = useState({ products: [], orders: [], customers: [] });
+  const [products, setProducts] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState("");
   const [timeRange, setTimeRange] = useState(3);
 
-  // Fetch operational analytics
-  const fetchDashboardData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  useEffect(() => {
+    let isMounted = true;
 
-    try {
-      const [productsRes, ordersRes, customersRes] = await Promise.all([
-        productService.getAllProducts({ limit: 200 }),
-        orderService.getAllOrders({ limit: 200 }),
-        customerService.getAllCustomers(),
-      ]);
+    const fetchDashboardMetrics = async () => {
+      try {
+        const [productsRes, ordersRes, customersRes] = await Promise.all([
+          productService.getAllProducts({ limit: 200 }),
+          orderService.getAllOrders({ limit: 200 }),
+          customerService.getAllCustomers(),
+        ]);
 
-      setData({
-        products: extractList(productsRes, "products"),
-        orders: extractList(ordersRes, "orders"),
-        customers: extractList(customersRes, "customers"),
-      });
-    } catch (err) {
-      console.error("[Dashboard] Error fetching operational data:", err);
-      setError("Unable to sync live operational analytics. Displaying cached state.");
-    } finally {
-      setLoading(false);
-    }
+        if (isMounted) {
+          setProducts(parseApiResponseList(productsRes, "products"));
+          setOrders(parseApiResponseList(ordersRes, "orders"));
+          setCustomers(parseApiResponseList(customersRes, "customers"));
+        }
+      } catch (err) {
+        if (isMounted) {
+          console.error("Dashboard hydration error:", err);
+          setError("Unable to sync live analytics engine.");
+        }
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    fetchDashboardMetrics();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, [fetchDashboardData]);
-
-  // Filter orders based on the selected timeframe
   const filteredOrders = useMemo(() => {
-    const cutoff = new Date();
-    cutoff.setMonth(cutoff.getMonth() - timeRange);
+    const cutoffDate = new Date();
+    cutoffDate.setMonth(cutoffDate.getMonth() - timeRange);
 
-    return data.orders.filter((order) => {
-      if (!order?.createdAt) return false;
+    return orders.filter((order) => {
+      if (!order.createdAt) return false;
       const orderDate = new Date(order.createdAt);
-      return !isNaN(orderDate.getTime()) && orderDate >= cutoff;
+      return !isNaN(orderDate.getTime()) && orderDate >= cutoffDate;
     });
-  }, [data.orders, timeRange]);
+  }, [orders, timeRange]);
 
-  // Derived KPI metrics
   const stats = useMemo(() => {
     const totalRevenue = filteredOrders.reduce(
-      (acc, order) => acc + Number(order.totalAmount || 0),
+      (sum, order) => sum + Number(order.totalAmount || 0),
       0
     );
 
@@ -142,8 +97,8 @@ const Dashboard = () => {
         id: "revenue",
         title: "Total Revenue",
         value: totalRevenue,
-        icon: <FiDollarSign />,
-        prefix: "Rs.",
+        icon: <span style={{ fontWeight: 800, fontSize: "15px" }}>Rs.</span>,
+        prefix: "Rs. ",
         color: "#C9A86A",
       },
       {
@@ -157,7 +112,7 @@ const Dashboard = () => {
       {
         id: "customers",
         title: "Active Customers",
-        value: data.customers.length,
+        value: customers.length,
         icon: <FiUsers />,
         prefix: "",
         color: "#EC4899",
@@ -165,49 +120,52 @@ const Dashboard = () => {
       {
         id: "products",
         title: "Catalog Products",
-        value: data.products.length,
+        value: products.length,
         icon: <FiPackage />,
         prefix: "",
         color: "#10B981",
       },
     ];
-  }, [filteredOrders, data.customers.length, data.products.length]);
+  }, [filteredOrders, customers.length, products.length]);
 
-  // Chart data calculation
   const chartData = useMemo(() => {
-    const monthlyMap = {};
+    const monthlyData = {};
 
     filteredOrders.forEach((order) => {
       const date = order.createdAt ? new Date(order.createdAt) : null;
       if (!date || isNaN(date.getTime())) return;
 
-      const sortKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-      const label = date.toLocaleString("en-US", { month: "short", year: "2-digit" });
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+      const monthLabel = date.toLocaleString("en-US", { month: "short", year: "2-digit" });
 
-      if (!monthlyMap[sortKey]) {
-        monthlyMap[sortKey] = { name: label, Revenue: 0, Profit: 0, sortKey };
+      if (!monthlyData[monthKey]) {
+        monthlyData[monthKey] = {
+          name: monthLabel,
+          Revenue: 0,
+          Profit: 0,
+          key: monthKey,
+        };
       }
 
       const rev = Number(order.totalAmount || 0);
-      monthlyMap[sortKey].Revenue += rev;
-      monthlyMap[sortKey].Profit += rev * 0.22; // Estimated margin formula
+      monthlyData[monthKey].Revenue += rev;
+      monthlyData[monthKey].Profit += rev * 0.22;
     });
 
-    return Object.values(monthlyMap)
-      .sort((a, b) => a.sortKey.localeCompare(b.sortKey))
-      .map(({ sortKey, ...rest }) => rest);
+    return Object.values(monthlyData)
+      .sort((a, b) => a.key.localeCompare(b.key))
+      .map(({ key, ...rest }) => rest);
   }, [filteredOrders]);
 
-  // Fulfillment status distribution
   const pieData = useMemo(() => {
     const counts = { Delivered: 0, Processing: 0, Pending: 0, Cancelled: 0 };
 
     filteredOrders.forEach((order) => {
-      const rawStatus = String(order.orderStatus || "Processing").toLowerCase();
-      const statusKey = rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1);
+      const statusRaw = String(order.orderStatus || "Processing").toLowerCase();
+      const status = statusRaw.charAt(0).toUpperCase() + statusRaw.slice(1);
 
-      if (counts[statusKey] !== undefined) {
-        counts[statusKey] += 1;
+      if (counts[status] !== undefined) {
+        counts[status] += 1;
       } else {
         counts.Processing += 1;
       }
@@ -216,67 +174,58 @@ const Dashboard = () => {
     return Object.entries(counts).map(([name, value]) => ({ name, value }));
   }, [filteredOrders]);
 
-  // Top products by volume
   const topProducts = useMemo(() => {
-    const map = {};
+    const productMap = {};
 
     filteredOrders.forEach((order) => {
       order.items?.forEach((item) => {
-        const id = item.product?._id || item.productId || "unknown";
-        const name = item.product?.name || item.productName || "Product";
+        const id = item.product?._id || item.product?.id || item.productId || "unknown";
+        const title = item.product?.name || item.product?.title || item.productName || "Product";
 
-        if (!map[id]) map[id] = { name, sales: 0, revenue: 0 };
+        if (!productMap[id]) {
+          productMap[id] = { name: title, sales: 0, revenue: 0 };
+        }
 
         const qty = Number(item.quantity || 0);
-        const price = Number(item.price || item.totalPrice || 0);
+        const unitPrice = Number(item.price || item.totalPrice || 0);
 
-        map[id].sales += qty;
-        map[id].revenue += price * qty;
+        productMap[id].sales += qty;
+        productMap[id].revenue += unitPrice * qty;
       });
     });
 
-    return Object.values(map)
+    return Object.values(productMap)
       .sort((a, b) => b.sales - a.sales)
       .slice(0, 5);
   }, [filteredOrders]);
 
-  // Inventory threshold alerts
-  const lowStockItems = useMemo(() => {
-    return data.products.filter((p) => Number(p.stock ?? p.inventory ?? 0) <= 10);
-  }, [data.products]);
+  const lowStockProducts = useMemo(() => {
+    return products.filter((item) => Number(item.stock ?? item.inventory ?? 0) <= 10);
+  }, [products]);
 
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.04 } },
-  };
-
-  const cardVariants = {
-    hidden: { opacity: 0, y: 12 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" } },
-  };
+  const recentOrders = useMemo(() => {
+    return orders.slice(0, 8);
+  }, [orders]);
 
   return (
     <div className="dashboard-shell">
       {error && <div className="dashboard-error-banner">{error}</div>}
 
-      {/* Header Bar */}
+      {/* Main Header */}
       <header className="dashboard-header">
         <div>
-          <p className="dashboard-eyebrow">Operations Center</p>
+          <p className="dashboard-eyebrow">Operations Hub</p>
           <h1 className="dashboard-title">Dashboard</h1>
-          <p className="dashboard-subtitle">
-            Real-time performance insights from products, orders, and customers.
-          </p>
+          <p className="dashboard-subtitle">Real-time revenue, order flow, and product metrics.</p>
         </div>
 
         <div className="dashboard-actions">
           <label className="select-field">
-            <FiCalendar className="field-icon" />
+            <FiCalendar />
             <select
+              aria-label="Time Filter"
               value={timeRange}
               onChange={(e) => setTimeRange(Number(e.target.value))}
-              aria-label="Select timeframe"
             >
               <option value={3}>Last 3 months</option>
               <option value={6}>Last 6 months</option>
@@ -287,48 +236,68 @@ const Dashboard = () => {
         </div>
       </header>
 
-      {/* KPI Metrics */}
-      <motion.div
-        className="metrics-grid"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
+      {/* Top Stat Cards */}
+      <section className="metrics-grid">
         {stats.map((item) => (
-          <MetricCard
+          <motion.article
             key={item.id}
-            {...item}
-            loading={loading}
-            variants={cardVariants}
-          />
+            className="metric-card"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+          >
+            <div className="metric-card-header">
+              <div
+                className="metric-icon"
+                style={{ backgroundColor: `${item.color}15`, color: item.color }}
+              >
+                {item.icon}
+              </div>
+              <span className="metric-pill">Live</span>
+            </div>
+            <p className="metric-title">{item.title}</p>
+            <h2 className="metric-value">
+              {loading ? (
+                <div className="skeleton" style={{ width: "100px", height: "30px" }} />
+              ) : (
+                <>
+                  {item.prefix}
+                  {item.id === "revenue"
+                    ? item.value.toFixed(2)
+                    : item.value.toLocaleString()}
+                </>
+              )}
+            </h2>
+            <div className="metric-accent" style={{ backgroundColor: item.color }} />
+          </motion.article>
         ))}
-      </motion.div>
+      </section>
 
-      {/* Analytics Visualizations */}
+      {/* Analytics Visualization Section */}
       <div className="analytics-grid">
         <section className="analytics-card">
           <div className="card-heading">
             <div>
               <h3>Performance Trajectory</h3>
-              <p>Revenue and profit movement over the selected period.</p>
+              <p>Revenue and profit movement over selected timeline.</p>
             </div>
             <span className="chip">
-              <FiTrendingUp /> Live trend
+              <FiTrendingUp /> Live
             </span>
           </div>
 
           <div className="chart-wrapper">
             {loading ? (
-              <SkeletonLoader />
+              <div className="skeleton skeleton-chart" />
             ) : (
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={280}>
                 <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
-                    <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#C9A86A" stopOpacity={0.25} />
+                    <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#C9A86A" stopOpacity={0.3} />
                       <stop offset="95%" stopColor="#C9A86A" stopOpacity={0} />
                     </linearGradient>
-                    <linearGradient id="profitGrad" x1="0" y1="0" x2="0" y2="1">
+                    <linearGradient id="profitGradient" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#4F46E5" stopOpacity={0.2} />
                       <stop offset="95%" stopColor="#4F46E5" stopOpacity={0} />
                     </linearGradient>
@@ -336,9 +305,12 @@ const Dashboard = () => {
                   <CartesianGrid stroke="#F1F5F9" strokeDasharray="3 3" vertical={false} />
                   <XAxis dataKey="name" tickLine={false} axisLine={false} stroke="#94A3B8" fontSize={11} />
                   <YAxis tickLine={false} axisLine={false} stroke="#94A3B8" fontSize={11} />
-                  <Tooltip contentStyle={{ background: "#0F172A", color: "#FFF", borderRadius: "8px", border: "none" }} />
-                  <Area type="monotone" dataKey="Revenue" stroke="#C9A86A" strokeWidth={2} fill="url(#revenueGrad)" />
-                  <Area type="monotone" dataKey="Profit" stroke="#4F46E5" strokeWidth={2} fill="url(#profitGrad)" />
+                  <Tooltip
+                    formatter={(value) => [`Rs. ${Number(value).toLocaleString()}`, ""]}
+                    contentStyle={{ background: "#0F172A", color: "#FFF", borderRadius: "8px", border: "none" }}
+                  />
+                  <Area type="monotone" dataKey="Revenue" stroke="#C9A86A" strokeWidth={2} fillOpacity={1} fill="url(#revenueGradient)" />
+                  <Area type="monotone" dataKey="Profit" stroke="#4F46E5" strokeWidth={2} fillOpacity={1} fill="url(#profitGradient)" />
                 </AreaChart>
               </ResponsiveContainer>
             )}
@@ -349,18 +321,18 @@ const Dashboard = () => {
           <div className="card-heading">
             <div>
               <h3>Order Status Mix</h3>
-              <p>Current fulfillment distribution across the window.</p>
+              <p>Distribution breakdown across orders.</p>
             </div>
           </div>
 
           <div className="pie-wrapper">
             {loading ? (
-              <SkeletonLoader />
+              <div className="skeleton skeleton-chart" />
             ) : (
               <>
-                <ResponsiveContainer width="100%" height={210}>
+                <ResponsiveContainer width="100%" height={200}>
                   <PieChart>
-                    <Pie data={pieData} dataKey="value" innerRadius={65} outerRadius={85} paddingAngle={4}>
+                    <Pie data={pieData} dataKey="value" innerRadius={60} outerRadius={85} paddingAngle={4}>
                       {pieData.map((entry, idx) => (
                         <Cell key={`cell-${idx}`} fill={PIE_COLORS[idx % PIE_COLORS.length]} />
                       ))}
@@ -384,36 +356,37 @@ const Dashboard = () => {
         </section>
       </div>
 
-      {/* Inventory Warning Notice */}
-      {lowStockItems.length > 0 && !loading && (
+      {/* Stock Warning Banner */}
+      {lowStockProducts.length > 0 && (
         <section className="alert-card">
           <div className="alert-header">
             <div className="alert-icon">
               <FiAlertTriangle />
             </div>
             <div>
-              <h3>Low Stock Alert</h3>
-              <p>{lowStockItems.length} items are running low (under 10 units remaining).</p>
+              <h3>Low stock alert</h3>
+              <p>{lowStockProducts.length} items reaching inventory threshold limits.</p>
             </div>
           </div>
+
           <div className="alert-tags">
-            {lowStockItems.slice(0, 5).map((item, idx) => (
-              <span key={item._id || idx} className="alert-tag">
+            {lowStockProducts.slice(0, 4).map((item, idx) => (
+              <span key={item._id || item.id || idx} className="alert-tag">
                 {item.name || item.title}
-                <strong>{item.stock ?? item.inventory ?? 0} left</strong>
+                <strong>{item.stock ?? item.inventory ?? 0} remaining</strong>
               </span>
             ))}
           </div>
         </section>
       )}
 
-      {/* Tables & Top Items */}
+      {/* Recent Activity Section */}
       <div className="content-grid">
         <section className="panel-card">
           <div className="panel-card-header">
             <div>
-              <h3>Recent Activity</h3>
-              <p>Latest transactions synchronized from the backend.</p>
+              <h3>Recent Orders</h3>
+              <p>Latest synced consumer transactions.</p>
             </div>
           </div>
 
@@ -421,52 +394,46 @@ const Dashboard = () => {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Order</th>
+                  <th>Order ID</th>
                   <th>Customer</th>
-                  <th>Amount</th>
+                  <th>Total Amount</th>
                   <th>Status</th>
                 </tr>
               </thead>
               <tbody>
-                {loading ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <tr key={i}>
-                      <td colSpan="4"><SkeletonLoader /></td>
-                    </tr>
-                  ))
-                ) : data.orders.length > 0 ? (
-                  data.orders.slice(0, 7).map((order, idx) => {
-                    const orderId = order._id || order.id || `ord-${idx}`;
-                    const customerName = order.user
+                {recentOrders.length > 0 ? (
+                  recentOrders.map((order, idx) => {
+                    const id = order._id || order.id || `ORD-${idx + 1}`;
+                    const name = order.user
                       ? `${order.user.firstName || ""} ${order.user.lastName || ""}`.trim()
                       : order.customer?.name || "Guest";
-                    const status = String(order.orderStatus || "Processing").toLowerCase();
+                    const statusClass = String(order.orderStatus || "Processing").toLowerCase();
 
                     return (
-                      <tr key={orderId}>
+                      <tr key={id}>
                         <td>
-                          <strong>{order.orderNumber || orderId.slice(0, 8)}</strong>
+                          <strong>{order.orderNumber || id.slice(0, 8)}</strong>
                         </td>
                         <td>
                           <div className="customer-cell">
-                            <span>{customerName}</span>
-                            <small>{order.user?.email || "N/A"}</small>
+                            <span>{name}</span>
+                            <small>{order.user?.email || order.customer?.email || "No email"}</small>
                           </div>
                         </td>
                         <td>
                           <strong>Rs. {Number(order.totalAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</strong>
                         </td>
                         <td>
-                          <span className={`status-pill ${status}`}>
-                            {order.orderStatus || "Processing"}
-                          </span>
+                          <span className={`status-pill ${statusClass}`}>{order.orderStatus || "Processing"}</span>
                         </td>
                       </tr>
                     );
                   })
                 ) : (
                   <tr>
-                    <td colSpan="4" className="empty-state">No recent orders found.</td>
+                    <td colSpan="4" className="empty-state">
+                      No order history available.
+                    </td>
                   </tr>
                 )}
               </tbody>
@@ -478,28 +445,26 @@ const Dashboard = () => {
           <div className="panel-card-header">
             <div>
               <h3>Top Sellers</h3>
-              <p>Products generating highest sales volume.</p>
+              <p>Highest unit performing inventory.</p>
             </div>
           </div>
 
           <div className="ranking-list">
-            {loading ? (
-              <SkeletonLoader />
-            ) : topProducts.length > 0 ? (
-              topProducts.map((product, idx) => (
-                <div className="ranking-item" key={`${product.name}-${idx}`}>
+            {topProducts.length > 0 ? (
+              topProducts.map((item, idx) => (
+                <div className="ranking-item" key={`${item.name}-${idx}`}>
                   <div className="ranking-badge">#{idx + 1}</div>
                   <div className="ranking-details">
-                    <strong>{product.name}</strong>
-                    <span>{product.sales} units sold</span>
+                    <strong>{item.name}</strong>
+                    <span>{item.sales} units sold</span>
                   </div>
                   <div className="ranking-value">
-                    Rs. {Number(product.revenue).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    Rs. {Number(item.revenue).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                   </div>
                 </div>
               ))
             ) : (
-              <div className="empty-state">No product performance data available.</div>
+              <div className="empty-state">No product performance data found.</div>
             )}
           </div>
         </section>
