@@ -8,6 +8,7 @@ import './AdminLogin.css';
 const AdminLogin = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -24,56 +25,71 @@ const AdminLogin = () => {
 
     try {
       const response = await authService.login(formData);
-      if (response.data.user.role !== 'admin') {
+      
+      if (response?.data?.user?.role !== 'admin') {
         setError('Admin access required.');
       } else {
-        dispatch(setUser({ token: response.data.token, user: response.data.user }));
+        dispatch(
+          setUser({
+            token: response.data.token,
+            user: response.data.user
+          })
+        );
         navigate('/dashboard');
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed');
+      setError(err.response?.data?.message || 'Login failed. Please check credentials.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="admin-login-page">
-      <div className="admin-login-card">
-        <h1>Admin Sign In</h1>
-        <p>Manage RQ Fashion inventory, orders and users.</p>
+    <main className="rq-admin-login-wrapper">
+      <div className="rq-admin-login-card">
+        <h1 className="rq-admin-login-title">Login</h1>
 
-        {error && <div className="error-message">{error}</div>}
+        {error && <div className="rq-admin-error-box">{error}</div>}
 
-        <form onSubmit={handleSubmit} className="admin-login-form">
-          <div className="form-group">
-            <label>Email</label>
+        <form onSubmit={handleSubmit} className="rq-admin-form">
+          <div className="rq-admin-input-group">
+            <label htmlFor="email">Username</label>
             <input
+              id="email"
               name="email"
               type="email"
               value={formData.email}
               onChange={handleChange}
+              placeholder="Enter email"
               required
+              autoComplete="email"
             />
           </div>
 
-          <div className="form-group">
-            <label>Password</label>
+          <div className="rq-admin-input-group">
+            <label htmlFor="password">Password</label>
             <input
+              id="password"
               name="password"
               type="password"
               value={formData.password}
               onChange={handleChange}
+              placeholder="Enter password"
               required
+              autoComplete="current-password"
             />
           </div>
 
-          <button className="btn-primary" type="submit" disabled={loading}>
+          <button
+            type="submit"
+            className="rq-admin-submit-btn"
+            disabled={loading}
+          >
             {loading ? 'Signing In...' : 'Sign In'}
           </button>
         </form>
       </div>
-    </div>
+    </main>
   );
 };
 

@@ -1,66 +1,154 @@
-.admin-login-page {
+/* Container reset & page alignment */
+.rq-admin-login-wrapper {
   min-height: 100vh;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
-  background: #f4f2ee;
+  background-color: #e6e9ef;
+  padding: 16px;
+  box-sizing: border-box;
 }
 
-.admin-login-card {
+/* Circular/Embossed Circular Outer Card */
+.rq-admin-login-card {
   width: 100%;
-  max-width: 420px;
-  padding: 36px;
-  border-radius: 24px;
-  background: #ffffff;
-  box-shadow: 0 24px 48px rgba(17, 17, 17, 0.08);
+  max-width: 380px;
+  aspect-ratio: 1 / 1;
+  background: #e6e9ef;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 28px;
+  box-sizing: border-box;
+  box-shadow: 
+    18px 18px 36px #c4c7cc, 
+    -18px -18px 36px #ffffff;
+  transition: all 0.3s ease;
 }
 
-.admin-login-card h1 {
-  margin-bottom: 10px;
-}
-
-.admin-login-card p {
-  color: #666;
-  margin-bottom: 26px;
-}
-
-.admin-login-form .form-group {
-  margin-bottom: 18px;
-}
-
-.admin-login-form label {
-  display: block;
-  margin-bottom: 10px;
-}
-
-.admin-login-form input {
-  width: 100%;
-  padding: 14px 16px;
-  border: 1px solid #e7e7e7;
-  border-radius: 14px;
-}
-
-.btn-primary {
-  width: 100%;
-  padding: 16px 20px;
-  border-radius: 999px;
-  background: #111111;
-  color: #fff;
-  border: none;
-  cursor: pointer;
+/* Title styling */
+.rq-admin-login-title {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 26px;
   font-weight: 700;
+  color: #333333;
+  margin: 0 0 16px 0;
+  text-align: center;
+}
+
+/* Error message styling */
+.rq-admin-error-box {
+  width: 80%;
+  font-size: 13px;
+  color: #d32f2f;
+  background-color: #fde8e8;
+  padding: 8px 12px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  text-align: center;
+  box-shadow: inset 2px 2px 5px rgba(0,0,0,0.05);
+}
+
+/* Form layout */
+.rq-admin-form {
+  width: 80%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rq-admin-input-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.rq-admin-input-group label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #666666;
+  margin-left: 12px;
+  margin-bottom: 4px;
+}
+
+/* Sunken/Inset Input Style */
+.rq-admin-input-group input {
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  outline: none;
+  border-radius: 20px;
+  background: #e6e9ef;
+  font-size: 14px;
+  color: #333333;
+  box-sizing: border-box;
+  box-shadow: 
+    inset 3px 3px 6px #c4c7cc, 
+    inset -3px -3px 6px #ffffff;
+  transition: box-shadow 0.2s ease;
+}
+
+.rq-admin-input-group input:focus {
+  box-shadow: 
+    inset 4px 4px 8px #b8bbbf, 
+    inset -4px -4px 8px #ffffff;
+}
+
+/* Raised Embossed Button */
+.rq-admin-submit-btn {
   margin-top: 10px;
+  width: 100%;
+  padding: 11px;
+  border: none;
+  border-radius: 20px;
+  background: #e6e9ef;
+  color: #333333;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 
+    6px 6px 12px #c4c7cc, 
+    -6px -6px 12px #ffffff;
+  transition: all 0.2s ease;
 }
 
-.btn-primary:hover {
-  background: #333333;
+.rq-admin-submit-btn:hover {
+  box-shadow: 
+    8px 8px 16px #c4c7cc, 
+    -8px -8px 16px #ffffff;
 }
 
-.error-message {
-  margin-bottom: 18px;
-  padding: 14px 16px;
-  border-radius: 14px;
-  background: #fdecea;
-  color: #c62828;
+.rq-admin-submit-btn:active {
+  box-shadow: 
+    inset 3px 3px 6px #c4c7cc, 
+    inset -3px -3px 6px #ffffff;
+}
+
+.rq-admin-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 480px) {
+  .rq-admin-login-card {
+    max-width: 320px;
+    padding: 24px 16px;
+    border-radius: 36px;
+    aspect-ratio: auto;
+  }
+
+  .rq-admin-form, 
+  .rq-admin-error-box {
+    width: 90%;
+  }
+
+  .rq-admin-login-title {
+    font-size: 22px;
+    margin-bottom: 12px;
+  }
 }
