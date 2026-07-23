@@ -313,7 +313,7 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { toast } from 'react-toastify';
-import api from '../../services/api';
+import api, { getAbsoluteUrl } from '../../services/api';
 import './HeroSliderManager.css';
 
 const INITIAL_FORM_STATE = {
@@ -550,9 +550,9 @@ const HeroSliderManager = () => {
                 <div className="hsm-media-frame">
                   {slide.image ? (
                     slide.mediaType === 'video' || isVideoFile(slide.image) ? (
-                      <video src={slide.image} preload="metadata" muted playsInline />
+                      <video src={getAbsoluteUrl(slide.image)} preload="metadata" muted playsInline />
                     ) : (
-                      <img src={slide.image} alt={slide.title || 'Hero slide'} loading="lazy" />
+                      <img src={getAbsoluteUrl(slide.image)} alt={slide.title || 'Hero slide'} loading="lazy" />
                     )
                   ) : (
                     <div className="hsm-media-fallback">No Media Available</div>
