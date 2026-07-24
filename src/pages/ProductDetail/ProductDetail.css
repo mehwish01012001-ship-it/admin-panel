@@ -44,13 +44,6 @@
   width: 100%;
 }
 
-.adm-pd-header-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
 .adm-pd-back-link {
   background: transparent;
   border: none;
@@ -68,8 +61,7 @@
   color: var(--adm-text-main);
 }
 
-.adm-pd-edit-btn,
-.adm-pd-delete-btn {
+.adm-pd-edit-btn {
   background: var(--adm-text-main);
   color: #FFFFFF;
   text-decoration: none;
@@ -81,26 +73,10 @@
   align-items: center;
   gap: 8px;
   transition: var(--adm-transition);
-  border: none;
-  cursor: pointer;
-  line-height: 1;
-}
-
-.adm-pd-delete-btn {
-  background: #b33a3a;
 }
 
 .adm-pd-edit-btn:hover {
   background: #33302b;
-}
-
-.adm-pd-delete-btn:hover {
-  background: #962f2f;
-}
-
-.adm-pd-delete-btn:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
 }
 
 /* Grid Card */

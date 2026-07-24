@@ -4,7 +4,6 @@ import { Helmet } from 'react-helmet-async';
 import {
   FiArrowLeft,
   FiEdit3,
-  FiTrash2,
   FiPackage,
   FiTag,
   FiLayers,
@@ -35,7 +34,6 @@ const ProductDetail = () => {
   const [activeTab, setActiveTab] = useState('specs');
   const [isZoomed, setIsZoomed] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -110,25 +108,6 @@ const ProductDetail = () => {
     setMousePos({ x, y });
   };
 
-  const handleDelete = async () => {
-    if (!product || isDeleting) return;
-
-    const confirmed = window.confirm('Delete this product from the catalog?');
-    if (!confirmed) return;
-
-    setIsDeleting(true);
-    try {
-      await productService.deleteProduct(product._id || product.id);
-      await new Promise((resolve) => setTimeout(resolve, 400));
-      navigate('/products', { replace: true });
-    } catch (err) {
-      console.error(err);
-      setError('Failed to delete product.');
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
   if (loading) {
     return (
       <div className="adm-pd-wrapper">
@@ -174,9 +153,6 @@ const ProductDetail = () => {
             <FiArrowLeft /> Back to Products
           </button>
           <div className="adm-pd-header-actions">
-            <button className="adm-pd-delete-btn" onClick={handleDelete} disabled={isDeleting}>
-              <FiTrash2 /> {isDeleting ? 'Deleting...' : 'Delete Product'}
-            </button>
             <Link to={`/products/edit/${product._id || product.id}`} className="adm-pd-edit-btn">
               <FiEdit3 /> Edit Product
             </Link>

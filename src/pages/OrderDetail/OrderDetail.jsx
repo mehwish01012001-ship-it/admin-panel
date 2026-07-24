@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { orderService } from '../../services/orderService';
 import './OrderDetail.css';
 
 const OrderDetail = ({ orderId: propOrderId, onBack, onDelete, fetchOrderApi }) => {
   const { id: routeOrderId } = useParams();
+  const navigate = useNavigate();
   const resolvedOrderId = propOrderId || routeOrderId;
 
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -82,6 +84,27 @@ const OrderDetail = ({ orderId: propOrderId, onBack, onDelete, fetchOrderApi }) 
     return 'N/A';
   };
 
+  const handleDelete = async () => {
+    if (!resolvedOrderId || isDeleting) return;
+
+    const confirmed = window.confirm('Delete this order permanently?');
+    if (!confirmed) return;
+
+    setIsDeleting(true);
+    setError(null);
+
+    try {
+      await (onDelete ? onDelete(resolvedOrderId) : orderService.deleteOrder(resolvedOrderId));
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      navigate('/orders', { replace: true });
+    } catch (err) {
+      console.error(err);
+      setError('Failed to delete order.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="order-details-wrapper">
@@ -111,16 +134,21 @@ const OrderDetail = ({ orderId: propOrderId, onBack, onDelete, fetchOrderApi }) 
     <div className="order-details-wrapper">
       {/* Top Bar Actions */}
       <div className="order-details-action-bar">
-        {onBack && (
-          <button type="button" className="order-details-btn-secondary" onClick={onBack}>
-            &larr; Back
-          </button>
-        )}
-        {onDelete && (
-          <button type="button" className="order-details-btn-danger" onClick={() => onDelete(order._id || order.id || resolvedOrderId)}>
-            Delete Order
-          </button>
-        )}
+        <button
+          type="button"
+          className="order-details-btn-secondary"
+          onClick={() => (onBack ? onBack() : navigate('/orders'))}
+        >
+          &larr; Back
+        </button>
+        <button
+          type="button"
+          className="order-details-btn-danger"
+          onClick={handleDelete}
+          disabled={isDeleting}
+        >
+          {isDeleting ? 'Deleting...' : 'Delete Order'}
+        </button>
       </div>
 
       {/* Main Order Card */}
