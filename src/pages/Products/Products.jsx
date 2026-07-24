@@ -5,6 +5,7 @@ import {
   FiTrash2,
   FiPlus,
   FiSearch,
+  FiEye,
   FiRefreshCw,
   FiGrid,
   FiPackage,
@@ -239,6 +240,15 @@ const Products = () => {
                   className="product-card animate-fade-in-up" 
                   key={productId}
                   style={{ animationDelay: `${(index % 8) * 0.05}s` }}
+                  onClick={() => window.location.assign(`/products/${productId}`)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      window.location.assign(`/products/${productId}`);
+                    }
+                  }}
                 >
                   <div className="card-media">
                     <img
@@ -274,6 +284,13 @@ const Products = () => {
                         {product.isActive ? 'Active' : 'Inactive'}
                       </span>
                       <div className="action-buttons">
+                        <Link 
+                          to={`/products/${productId}`} 
+                          className="btn-icon edit"
+                          title="View Outfit Details"
+                        >
+                          <FiEye />
+                        </Link>
                         <Link 
                           to={`/products/edit/${productId}`} 
                           className="btn-icon edit"

@@ -3,9 +3,11 @@ import Products from '../pages/Products/Products';
 import Categories from '../pages/Categories/Categories';
 
 import Orders from '../pages/Orders/Orders';
+import OrderDetail from '../pages/OrderDetail/OrderDetail';
 import Customers from '../pages/Customers/Customers';
 import AddProduct from '../pages/AddProduct/AddProduct';
 import EditProduct from '../pages/EditProduct/EditProduct';
+import ProductDetail from '../pages/ProductDetail/ProductDetail';
 import Inventory from '../pages/Inventory/Inventory';
 import SalesReports from '../pages/SalesReports/SalesReports';
 import Settings from '../pages/Settings/Settings';
@@ -18,9 +20,11 @@ const routeConfig = [
   { path: '/dashboard', element: Dashboard, requiredRole: 'admin' },
   { path: '/products', element: Products, requiredRole: 'admin' },
   { path: '/products/create', element: AddProduct, requiredRole: 'admin' },
+  { path: '/products/:id', element: ProductDetail, requiredRole: 'admin' },
   { path: '/products/edit/:id', element: EditProduct, requiredRole: 'admin' },
   { path: '/categories', element: Categories, requiredRole: 'admin' },
   { path: '/orders', element: Orders, requiredRole: 'admin' },
+  { path: '/orders/:id', element: OrderDetail, requiredRole: 'admin' },
   { path: '/customers', element: Customers, requiredRole: 'admin' },
   { path: '/inventory', element: Inventory, requiredRole: 'admin' },
   { path: '/sales-reports', element: SalesReports, requiredRole: 'admin' },

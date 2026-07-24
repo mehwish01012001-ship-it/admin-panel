@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   FiSearch, 
   FiEye, 
@@ -18,6 +18,7 @@ const PAYMENT_STATUS_OPTIONS = ['pending', 'paid', 'failed', 'refunded'];
 
 export default function Orders() {
   const location = useLocation();
+  const navigate = useNavigate();
 
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -27,10 +28,8 @@ export default function Orders() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeStatusFilter, setActiveStatusFilter] = useState('all');
   
-  // Modal and Interactive States
-  const [selectedOrder, setSelectedOrder] = useState(null);
+  // Interactive States
   const [activeUpdatingId, setActiveUpdatingId] = useState('');
-  const [expandedItemId, setExpandedItemId] = useState('');
 
   // Safe Image URL Resolver
   const resolveImageUrl = useCallback((imageSource) => {
@@ -74,14 +73,7 @@ export default function Orders() {
       const fetchedOrders = response?.data?.orders || [];
       setOrders(fetchedOrders);
 
-      // Auto-select order if redirected from navigation state
-      const targetOrderId = location?.state?.orderId;
-      if (targetOrderId) {
-        const matchingOrder = fetchedOrders.find(
-          (item) => (item._id || item.id) === targetOrderId
-        );
-        if (matchingOrder) setSelectedOrder(matchingOrder);
-      }
+      // Keep the orders list clean; detail pages now use their own route.
     } catch (error) {
       console.error('Failed to load orders:', error);
       setErrorMessage('Orders load karne mein dushwari hui. Baraye meherbani dubara koshish karein.');
@@ -108,9 +100,6 @@ export default function Orders() {
         )
       );
 
-      if (selectedOrder && (selectedOrder._id || selectedOrder.id) === orderId) {
-        setSelectedOrder((previous) => ({ ...previous, [statusField]: newStatus }));
-      }
     } catch (error) {
       console.error('Status update failed:', error);
       setErrorMessage('Status update nahi ho saka.');
@@ -132,7 +121,6 @@ export default function Orders() {
     try {
       await orderService.deleteOrder(orderId);
       setOrders((previous) => previous.filter((item) => (item._id || item.id) !== orderId));
-      setSelectedOrder(null);
     } catch (error) {
       console.error('Delete order error:', error);
       setErrorMessage('Order delete nahi ho saka. Dobara koshish karein.');
@@ -302,7 +290,7 @@ export default function Orders() {
                         <button
                           type="button"
                           className="view-details-btn"
-                          onClick={() => setSelectedOrder(order)}
+                          onClick={() => navigate(`/orders/${id}`)}
                           title="View Details"
                         >
                           <FiEye />
@@ -317,171 +305,6 @@ export default function Orders() {
         )}
       </main>
 
-      {/* Order Details Modal */}
-      {selectedOrder && (
-        <div className="modal-backdrop" onClick={() => setSelectedOrder(null)}>
-          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-            <header className="modal-header">
-              <div>
-                <h2>Order Summary</h2>
-                <span className="modal-order-id">ID: {selectedOrder.orderNumber || (selectedOrder._id || selectedOrder.id)}</span>
-              </div>
-              <div className="modal-actions">
-                <button
-                  type="button"
-                  className="delete-order-btn"
-                  disabled={activeUpdatingId === (selectedOrder._id || selectedOrder.id)}
-                  onClick={() => handleOrderDelete(selectedOrder._id || selectedOrder.id)}
-                >
-                  <FiTrash2 style={{ marginRight: '6px' }} /> Delete
-                </button>
-                <button type="button" className="close-modal-btn" onClick={() => setSelectedOrder(null)}>
-                  <FiX />
-                </button>
-              </div>
-            </header>
-
-            <div className="modal-scrollable-body">
-              {/* Status Update Form Controls */}
-              <div className="modal-card">
-                <h3>Management Control</h3>
-                <div className="grid-responsive-2">
-                  <div className="form-field">
-                    <label>Order Status</label>
-                    <select
-                      value={selectedOrder.orderStatus || 'pending'}
-                      disabled={activeUpdatingId === (selectedOrder._id || selectedOrder.id)}
-                      onChange={(e) => handleStatusChange(selectedOrder._id || selectedOrder.id, 'orderStatus', e.target.value)}
-                    >
-                      {ORDER_STATUS_OPTIONS.map((status) => (
-                        <option key={status} value={status}>
-                          {status.charAt(0).toUpperCase() + status.slice(1)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="form-field">
-                    <label>Payment Status</label>
-                    <select
-                      value={selectedOrder.paymentStatus || 'pending'}
-                      disabled={activeUpdatingId === (selectedOrder._id || selectedOrder.id)}
-                      onChange={(e) => handleStatusChange(selectedOrder._id || selectedOrder.id, 'paymentStatus', e.target.value)}
-                    >
-                      {PAYMENT_STATUS_OPTIONS.map((status) => (
-                        <option key={status} value={status}>
-                          {status.charAt(0).toUpperCase() + status.slice(1)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {/* Information Grid */}
-              <div className="grid-responsive-3">
-                <div className="modal-card">
-                  <h3>Customer Details</h3>
-                  <p><strong>Name:</strong> {selectedOrder.user ? `${selectedOrder.user.firstName || ''} ${selectedOrder.user.lastName || ''}`.trim() : 'Guest'}</p>
-                  <p><strong>Email:</strong> {selectedOrder.user?.email || 'N/A'}</p>
-                  <p><strong>Phone:</strong> {selectedOrder.shippingAddress?.phone || 'Not Provided'}</p>
-                  <p><strong>Address:</strong> {formatShippingAddress(selectedOrder.shippingAddress)}</p>
-                </div>
-
-                <div className="modal-card">
-                  <h3>Financial Summary</h3>
-                  <p><strong>Method:</strong> {selectedOrder.paymentMethod || 'COD / Online'}</p>
-                  <p><strong>Account #:</strong> {selectedOrder.paymentNumber || 'N/A'}</p>
-                  <p>
-                    <strong>Total Amount:</strong>{' '}
-                    <span className="price-text">
-                      Rs. {Number(selectedOrder.totalAmount || 0).toLocaleString('en-PK', { minimumFractionDigits: 2 })}
-                    </span>
-                  </p>
-                  <p><strong>Date:</strong> {selectedOrder.createdAt ? new Date(selectedOrder.createdAt).toLocaleString() : '-'}</p>
-                </div>
-
-                <div className="modal-card">
-                  <h3>Order Notes</h3>
-                  <div className="notes-content">
-                    {selectedOrder.notes || 'No customer notes attached to this order.'}
-                  </div>
-                </div>
-              </div>
-
-              {/* Items List */}
-              <div className="modal-card">
-                <h3>Order Items</h3>
-                <div className="items-list-container">
-                  {(selectedOrder.items || []).map((item, index) => {
-                    const product = item.product;
-                    const itemImageUrl = resolveImageUrl(product?.images?.[0] || product?.image || '');
-                    const itemUniqueKey = `${selectedOrder._id || selectedOrder.id}-${index}`;
-                    const isDrawerOpen = expandedItemId === itemUniqueKey;
-
-                    return (
-                      <div key={itemUniqueKey} className="item-entry-card">
-                        <div className="item-entry-header">
-                          <img
-                            src={itemImageUrl}
-                            alt={product?.name || 'Product'}
-                            className="item-thumbnail"
-                            onError={(e) => {
-                              e.currentTarget.src = 'https://via.placeholder.com/50?text=Item';
-                            }}
-                          />
-                          <div className="item-main-details">
-                            <span className="item-title-text">{product?.name || `Item Line #${index + 1}`}</span>
-                            <div className="item-spec-tags">
-                              <span>Qty: {item.quantity || 1}</span>
-                              <span>Size: {item.size || 'N/A'}</span>
-                              <span>Color: {item.color || 'N/A'}</span>
-                            </div>
-                          </div>
-                          <div className="item-price-wrapper">
-                            <span className="item-price-text">
-                              Rs. {Number(item.price || 0).toLocaleString('en-PK', { minimumFractionDigits: 2 })}
-                            </span>
-                            <button
-                              type="button"
-                              className="drawer-toggle-btn"
-                              onClick={() => setExpandedItemId(isDrawerOpen ? '' : itemUniqueKey)}
-                            >
-                              {isDrawerOpen ? <FiChevronUp /> : <FiChevronDown />}
-                            </button>
-                          </div>
-                        </div>
-
-                        {isDrawerOpen && (
-                          <div className="item-drawer-details">
-                            {product?.sku && <p><strong>SKU:</strong> {product.sku}</p>}
-                            {product?.brand && <p><strong>Brand:</strong> {product.brand}</p>}
-                            {product?.category && <p><strong>Category:</strong> {product.category}</p>}
-                            {typeof product?.stock === 'number' && <p><strong>Stock Remaining:</strong> {product.stock}</p>}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Payment Proof Receipt Section */}
-              {(selectedOrder.paymentReceipt || selectedOrder.paymentProof) && (
-                <div className="modal-card">
-                  <h3>Payment Receipt</h3>
-                  <div className="receipt-preview-box">
-                    <img
-                      src={resolveImageUrl(selectedOrder.paymentReceipt || selectedOrder.paymentProof)}
-                      alt="Payment Receipt"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
