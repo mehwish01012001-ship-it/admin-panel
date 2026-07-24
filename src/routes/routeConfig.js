@@ -11,6 +11,7 @@ import SalesReports from '../pages/SalesReports/SalesReports';
 import Settings from '../pages/Settings/Settings';
 import AdminProfile from '../pages/AdminProfile/AdminProfile';
 import HeroSliderManager from '../pages/HeroSliderManager/HeroSliderManager';
+import ContactMessages from '../pages/ContactMessages/ContactMessages';
 
 const routeConfig = [
   { path: '/', element: Dashboard, requiredRole: 'admin' },
@@ -26,6 +27,7 @@ const routeConfig = [
   { path: '/settings', element: Settings, requiredRole: 'admin' },
   { path: '/profile', element: AdminProfile, requiredRole: 'admin' },
   { path: '/hero-slider', element: HeroSliderManager, requiredRole: 'admin' },
+  { path: '/contact-messages', element: ContactMessages, requiredRole: 'admin' },
 ];
 
 export default routeConfig;
