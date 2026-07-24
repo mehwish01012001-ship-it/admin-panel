@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { FiSearch, FiStar, FiShield, FiUserPlus } from 'react-icons/fi';
+import { FiSearch, FiStar, FiShield, FiUserPlus, FiTrash2 } from 'react-icons/fi';
 import { customerService } from '../../services/customerService';
 import './Customers.css';
 
@@ -11,24 +11,47 @@ const Customers = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortOrder, setSortOrder] = useState('joinedDesc');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const fetchCustomers = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const response = await customerService.getAllCustomers();
+      setCustomers(response?.data?.customers || []);
+    } catch (err) {
+      console.error(err);
+      setError('Unable to sync customer records.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchCustomers = async () => {
-      setLoading(true);
-      setError('');
-      try {
-        const response = await customerService.getAllCustomers();
-        setCustomers(response?.data?.customers || []);
-      } catch (err) {
-        console.error(err);
-        setError('Unable to sync customer records.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchCustomers();
   }, []);
+
+  const handleDeleteCustomer = async () => {
+    if (!selectedCustomer) return;
+
+    const customerId = selectedCustomer._id || selectedCustomer.id;
+    const fullName = `${selectedCustomer.firstName || ''} ${selectedCustomer.lastName || ''}`.trim() || 'this customer';
+
+    const confirmed = window.confirm(`Delete ${fullName}? This action cannot be undone.`);
+    if (!confirmed) return;
+
+    try {
+      setDeleting(true);
+      await customerService.deleteCustomer(customerId);
+      setCustomers((prev) => prev.filter((customer) => (customer._id || customer.id) !== customerId));
+      setSelectedCustomer(null);
+    } catch (err) {
+      console.error(err);
+      setError('Unable to delete customer record.');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const customerCounts = useMemo(() => {
     const active = customers.filter((c) => c.isActive).length;
@@ -265,6 +288,11 @@ const Customers = () => {
                   <label>Mobile Number</label>
                   <span>{selectedCustomer.phone || selectedCustomer.mobileNumber || '—'}</span>
                 </div>
+
+                <button className="cust-dir-delete-btn" onClick={handleDeleteCustomer} disabled={deleting}>
+                  <FiTrash2 />
+                  {deleting ? 'Deleting...' : 'Delete Customer'}
+                </button>
               </div>
             </div>
           </div>

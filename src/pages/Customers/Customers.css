@@ -303,6 +303,32 @@
   z-index: 1200;
 }
 
+.cust-dir-delete-btn {
+  margin-top: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: #b12c2c;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cust-dir-delete-btn:disabled {
+  opacity: 0.7;
+  cursor: progress;
+}
+
+.cust-dir-delete-btn:hover:not(:disabled) {
+  background: #8f2020;
+}
+
 .cust-dir-modal {
   width: min(520px, 100%);
   background: var(--cd-surface);

@@ -1,69 +1,123 @@
-import React, { useEffect, useState } from 'react';
-import { FiMail, FiMessageSquare, FiCheckCircle } from 'react-icons/fi';
+import React, { useEffect, useState, useCallback } from 'react';
+import { FiMail, FiMessageSquare, FiCheckCircle, FiClock, FiSend } from 'react-icons/fi';
 import { contactService } from '../../services/contactService';
+import './ContactMessages.css';
 
 const ContactMessages = () => {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const fetchMessages = async () => {
+  const fetchMessages = useCallback(async () => {
     try {
-      setLoading(true);
+      setError('');
       const response = await contactService.getAllMessages();
-      setMessages(response?.data?.messages || []);
+      const list = response?.data?.messages || response?.data || response?.messages || [];
+      setMessages(Array.isArray(list) ? list : []);
     } catch (err) {
-      setError('Unable to load contact messages.');
+      setError('Unable to load contact messages. Please try again.');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchMessages();
-  }, []);
+  }, [fetchMessages]);
 
-  const updateStatus = async (id, status) => {
+  const handleUpdateStatus = async (id, newStatus) => {
+    const previousMessages = [...messages];
+
+    // Optimistic UI update for immediate response (< 1s)
+    setMessages((prev) =>
+      prev.map((msg) => (msg._id === id ? { ...msg, status: newStatus } : msg))
+    );
+
     try {
-      await contactService.updateMessageStatus(id, status);
-      fetchMessages();
+      await contactService.updateMessageStatus(id, newStatus);
     } catch (err) {
+      // Rollback on API failure
+      setMessages(previousMessages);
       setError('Unable to update message status.');
     }
   };
 
-  return (
-    <div style={{ padding: '24px' }}>
-      <h1 style={{ marginBottom: '8px' }}>Contact Messages</h1>
-      <p style={{ marginBottom: '24px', color: '#666' }}>Messages submitted from the contact form will appear here.</p>
+  const getStatusBadge = (status) => {
+    const currentStatus = (status || 'new').toLowerCase();
+    switch (currentStatus) {
+      case 'read':
+        return <span className="status-badge status-read"><FiCheckCircle /> Read</span>;
+      case 'replied':
+        return <span className="status-badge status-replied"><FiSend /> Replied</span>;
+      default:
+        return <span className="status-badge status-new"><FiClock /> New</span>;
+    }
+  };
 
-      {error ? <p style={{ color: 'crimson' }}>{error}</p> : null}
+  return (
+    <div className="contact-messages-container">
+      <header className="contact-messages-header">
+        <h1>Contact Messages</h1>
+        <p>Messages submitted from the contact form will appear here dynamically.</p>
+      </header>
+
+      {error && <div className="contact-messages-error">{error}</div>}
 
       {loading ? (
-        <p>Loading messages...</p>
+        <div className="contact-messages-loading">
+          <div className="spinner"></div>
+          <p>Loading messages...</p>
+        </div>
       ) : messages.length === 0 ? (
-        <p>No contact messages yet.</p>
+        <div className="contact-messages-empty">
+          <FiMessageSquare className="empty-icon" />
+          <p>No contact messages found.</p>
+        </div>
       ) : (
-        <div style={{ display: 'grid', gap: '16px' }}>
+        <div className="contact-messages-grid">
           {messages.map((message) => (
-            <div key={message._id} style={{ border: '1px solid #e5e5e5', borderRadius: '12px', padding: '16px', background: '#fff' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', marginBottom: '8px' }}>
-                <strong>{message.name}</strong>
-                <span style={{ fontSize: '12px', color: '#888' }}>{new Date(message.createdAt).toLocaleString()}</span>
+            <article key={message._id} className="message-card">
+              <div className="message-card-header">
+                <div className="sender-info">
+                  <h3 className="sender-name">{message.name}</h3>
+                  <span className="sender-email">
+                    <FiMail className="inline-icon" /> {message.email}
+                  </span>
+                </div>
+                <div className="header-meta">
+                  {getStatusBadge(message.status)}
+                  <time className="message-date">
+                    {message.createdAt ? new Date(message.createdAt).toLocaleString() : ''}
+                  </time>
+                </div>
               </div>
-              <p style={{ margin: '4px 0' }}><FiMail style={{ marginRight: '6px' }} />{message.email}</p>
-              <p style={{ margin: '4px 0' }}><FiMessageSquare style={{ marginRight: '6px' }} />{message.subject}</p>
-              <p style={{ margin: '8px 0 12px', color: '#444' }}>{message.message}</p>
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <span style={{ fontSize: '12px', textTransform: 'capitalize', color: '#8a5a00' }}>{message.status || 'new'}</span>
-                <button onClick={() => updateStatus(message._id, 'read')} style={{ padding: '6px 10px', borderRadius: '8px', border: '1px solid #ccc', background: '#f7f7f7', cursor: 'pointer' }}>
+
+              <div className="message-subject">
+                <FiMessageSquare className="inline-icon" />
+                <span>{message.subject || 'No Subject'}</span>
+              </div>
+
+              <div className="message-body">
+                <p>{message.message}</p>
+              </div>
+
+              <footer className="message-card-actions">
+                <button
+                  type="button"
+                  className={`action-btn btn-read ${message.status === 'read' ? 'active' : ''}`}
+                  onClick={() => handleUpdateStatus(message._id, 'read')}
+                >
                   Mark Read
                 </button>
-                <button onClick={() => updateStatus(message._id, 'replied')} style={{ padding: '6px 10px', borderRadius: '8px', border: '1px solid #ccc', background: '#f7f7f7', cursor: 'pointer' }}>
+                <button
+                  type="button"
+                  className={`action-btn btn-replied ${message.status === 'replied' ? 'active' : ''}`}
+                  onClick={() => handleUpdateStatus(message._id, 'replied')}
+                >
                   Mark Replied
                 </button>
-              </div>
-            </div>
+              </footer>
+            </article>
           ))}
         </div>
       )}
