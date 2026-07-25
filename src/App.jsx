@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { Provider, useDispatch } from 'react-redux';
 import { ToastContainer } from 'react-toastify';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import store from './redux/store';
 import AppRoutes from './routes/AppRoutes';
