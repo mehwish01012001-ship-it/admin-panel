@@ -12,6 +12,8 @@ const OrderDetail = ({ orderId: propOrderId, onBack, onDelete, fetchOrderApi }) 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [statusUpdating, setStatusUpdating] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -105,6 +107,39 @@ const OrderDetail = ({ orderId: propOrderId, onBack, onDelete, fetchOrderApi }) 
     }
   };
 
+  const openItemDetails = (item) => {
+    setSelectedItem(item);
+  };
+
+  const closeItemDetails = () => {
+    setSelectedItem(null);
+  };
+
+  const handleStatusChange = async (type, value) => {
+    if (!order?._id) return;
+
+    setStatusUpdating(true);
+    try {
+      const payload = type === 'orderStatus' ? { orderStatus: value } : { paymentStatus: value };
+      const response = await orderService.updateOrderStatus(order._id, payload);
+      const updatedOrder = response?.data?.order || response?.data || response || null;
+
+      if (updatedOrder) {
+        setOrder((prev) => prev ? { ...prev, ...updatedOrder } : updatedOrder);
+      }
+    } catch (err) {
+      console.error(err);
+      setError('Failed to update order status.');
+    } finally {
+      setStatusUpdating(false);
+    }
+  };
+
+  const customerName = order?.customerName || order?.shippingAddress?.fullName || order?.billingAddress?.fullName || order?.user?.name || 'N/A';
+  const customerEmail = order?.customerEmail || order?.shippingAddress?.email || order?.billingAddress?.email || order?.user?.email || 'N/A';
+  const customerPhone = order?.customerPhone || order?.shippingAddress?.phone || order?.billingAddress?.phone || order?.user?.phone || 'N/A';
+  const customerAddress = formatShippingAddress(order?.shippingAddress || order?.billingAddress);
+
   if (loading) {
     return (
       <div className="order-details-wrapper">
@@ -160,8 +195,35 @@ const OrderDetail = ({ orderId: propOrderId, onBack, onDelete, fetchOrderApi }) 
             <h1 className="order-details-id-title">{order.orderNumber || order._id || order.id}</h1>
           </div>
           <div className="order-details-status-badges">
-            <span className="order-details-badge">{order.orderStatus || 'Pending'}</span>
-            <span className="order-details-badge">{order.paymentStatus || 'Pending'}</span>
+            <label className="order-details-status-control">
+              <span className="order-details-status-label">Order</span>
+              <select
+                value={order.orderStatus || 'pending'}
+                onChange={(e) => handleStatusChange('orderStatus', e.target.value)}
+                disabled={statusUpdating}
+                className="order-details-select"
+              >
+                <option value="pending">Pending</option>
+                <option value="processing">Processing</option>
+                <option value="shipped">Shipped</option>
+                <option value="delivered">Delivered</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </label>
+            <label className="order-details-status-control">
+              <span className="order-details-status-label">Payment</span>
+              <select
+                value={order.paymentStatus || 'pending'}
+                onChange={(e) => handleStatusChange('paymentStatus', e.target.value)}
+                disabled={statusUpdating}
+                className="order-details-select"
+              >
+                <option value="pending">Pending</option>
+                <option value="paid">Paid</option>
+                <option value="failed">Failed</option>
+                <option value="refunded">Refunded</option>
+              </select>
+            </label>
           </div>
         </div>
 
@@ -171,10 +233,10 @@ const OrderDetail = ({ orderId: propOrderId, onBack, onDelete, fetchOrderApi }) 
           <div className="order-details-info-box">
             <h2 className="order-details-box-heading">Customer Details</h2>
             <div className="order-details-info-content">
-              <p><strong>Name:</strong> {order.customerName || 'N/A'}</p>
-              <p><strong>Email:</strong> {order.customerEmail || 'N/A'}</p>
-              <p><strong>Phone:</strong> {order.customerPhone || 'N/A'}</p>
-              <p><strong>Address:</strong> {formatShippingAddress(order.shippingAddress)}</p>
+              <p><strong>Name:</strong> {customerName}</p>
+              <p><strong>Email:</strong> {customerEmail}</p>
+              <p><strong>Phone:</strong> {customerPhone}</p>
+              <p><strong>Address:</strong> {customerAddress}</p>
             </div>
           </div>
 
@@ -205,32 +267,68 @@ const OrderDetail = ({ orderId: propOrderId, onBack, onDelete, fetchOrderApi }) 
           <h2 className="order-details-section-heading">Order Items</h2>
           <div className="order-details-items-list">
             {order.items && order.items.length > 0 ? (
-              order.items.map((item, idx) => (
-                <div key={item.id || idx} className="order-details-item-card">
-                  <div className="order-details-item-thumb-container">
-                    <img
-                      src={item.imageUrl || null}
-                      alt={item.title || 'Product Item'}
-                      className="order-details-item-thumb"
-                      onError={handleImageError}
-                    />
-                    <div className="order-details-img-fallback">No Image</div>
-                  </div>
+              order.items.map((item, idx) => {
+                const productName = item.productName || item.title || item.product?.name || item.product?.title || `Item Line #${idx + 1}`;
+                const productSku = item.sku || item.product?.sku || 'N/A';
+                const productImage = item.imageUrl || item.product?.images?.[0]?.url || item.product?.image || item.product?.images?.[0] || null;
+                const productVariant = [item.size || item.product?.size, item.color || item.product?.color]
+                  .filter(Boolean)
+                  .join(' / ');
+                const notes = item.note || item.notes || '';
 
-                  <div className="order-details-item-info">
-                    <h3 className="order-details-item-title">{item.title || `Item Line #${idx + 1}`}</h3>
-                    <div className="order-details-item-meta">
-                      <span>Qty: {item.quantity || 1}</span>
-                      <span>Size: {item.size || 'N/A'}</span>
-                      <span>Color: {item.color || 'N/A'}</span>
+                const productDescription = item.description || item.product?.description || item.product?.shortDescription || 'No description provided.';
+                const productSize = item.size || item.product?.size || 'N/A';
+                const productColor = item.color || item.product?.color || 'N/A';
+                const productQuantity = item.quantity || 1;
+                const productNotes = notes || 'No notes provided.';
+
+                return (
+                  <button
+                    key={item.id || item._id || idx}
+                    type="button"
+                    className="order-details-item-card"
+                    onClick={() => openItemDetails({
+                      name: productName,
+                      description: productDescription,
+                      size: productSize,
+                      color: productColor,
+                      quantity: productQuantity,
+                      notes: productNotes,
+                      sku: productSku,
+                      image: productImage,
+                      price: item.price,
+                    })}
+                  >
+                    <div className="order-details-item-thumb-container">
+                      <img
+                        src={productImage || null}
+                        alt={productName}
+                        className="order-details-item-thumb"
+                        onError={handleImageError}
+                      />
+                      <div className="order-details-img-fallback">No Image</div>
                     </div>
-                  </div>
 
-                  <div className="order-details-item-price">
-                    Rs. {Number(item.price || 0).toFixed(2)}
-                  </div>
-                </div>
-              ))
+                    <div className="order-details-item-info">
+                      <h3 className="order-details-item-title">{productName}</h3>
+                      <div className="order-details-item-meta">
+                        <span className="order-details-pill">Qty: {productQuantity}</span>
+                        <span className="order-details-pill">Size: {productSize}</span>
+                        <span className="order-details-pill">Color: {productColor}</span>
+                        <span className="order-details-pill">SKU: {productSku}</span>
+                      </div>
+                      {productVariant ? (
+                        <div className="order-details-item-variant">Variant: {productVariant}</div>
+                      ) : null}
+                      {notes ? <div className="order-details-item-note">Note: {notes}</div> : null}
+                    </div>
+
+                    <div className="order-details-item-price">
+                      Rs. {Number(item.price || 0).toFixed(2)}
+                    </div>
+                  </button>
+                );
+              })
             ) : (
               <p className="order-details-empty-text">No items found in this order.</p>
             )}
@@ -257,6 +355,65 @@ const OrderDetail = ({ orderId: propOrderId, onBack, onDelete, fetchOrderApi }) 
           </div>
         </div>
       </div>
+
+      {selectedItem && (
+        <div className="order-details-modal-backdrop" onClick={closeItemDetails}>
+          <div className="order-details-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="order-details-modal-header">
+              <div>
+                <p className="order-details-subtitle">ORDER ITEM DETAILS</p>
+                <h3 className="order-details-modal-title">{selectedItem.name}</h3>
+              </div>
+              <button type="button" className="order-details-modal-close" onClick={closeItemDetails}>
+                ×
+              </button>
+            </div>
+
+            <div className="order-details-modal-body">
+              {selectedItem.image ? (
+                <div className="order-details-modal-image-wrap">
+                  <img src={selectedItem.image} alt={selectedItem.name} className="order-details-modal-image" />
+                </div>
+              ) : null}
+
+              <div className="order-details-modal-grid">
+                <div className="order-details-modal-field">
+                  <span className="order-details-modal-label">Name</span>
+                  <p>{selectedItem.name}</p>
+                </div>
+                <div className="order-details-modal-field">
+                  <span className="order-details-modal-label">Description</span>
+                  <p>{selectedItem.description}</p>
+                </div>
+                <div className="order-details-modal-field">
+                  <span className="order-details-modal-label">Size</span>
+                  <p>{selectedItem.size}</p>
+                </div>
+                <div className="order-details-modal-field">
+                  <span className="order-details-modal-label">Color</span>
+                  <p>{selectedItem.color}</p>
+                </div>
+                <div className="order-details-modal-field">
+                  <span className="order-details-modal-label">Quantity</span>
+                  <p>{selectedItem.quantity}</p>
+                </div>
+                <div className="order-details-modal-field">
+                  <span className="order-details-modal-label">Notes</span>
+                  <p>{selectedItem.notes}</p>
+                </div>
+                <div className="order-details-modal-field">
+                  <span className="order-details-modal-label">SKU</span>
+                  <p>{selectedItem.sku}</p>
+                </div>
+                <div className="order-details-modal-field">
+                  <span className="order-details-modal-label">Price</span>
+                  <p>Rs. {Number(selectedItem.price || 0).toFixed(2)}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

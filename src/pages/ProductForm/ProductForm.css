@@ -165,6 +165,73 @@ select {
   padding-left: 42px;
 }
 
+/* Product Tag Checkboxes */
+.tag-options-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.tag-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--aura-gray-border);
+  background: var(--aura-input-bg);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--aura-dark-velvet);
+  cursor: pointer;
+  transition: all var(--aura-transition-fast);
+}
+
+.tag-option:hover {
+  border-color: var(--aura-accent-gold);
+  transform: translateY(-1px);
+}
+
+.tag-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.tag-option-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: currentColor;
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.6);
+}
+
+.tag-option--new {
+  color: #2563eb;
+  background: #eff6ff;
+}
+
+.tag-option--best {
+  color: #b45309;
+  background: #fffbeb;
+}
+
+.tag-option--trending {
+  color: #be185d;
+  background: #fdf2f8;
+}
+
+.tag-option--limited {
+  color: #7c3aed;
+  background: #f5f3ff;
+}
+
+.tag-option:has(input:checked) {
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+
 /* Toggle Switches */
 .switches-box {
   display: flex;

@@ -21,7 +21,10 @@ const DEFAULT_FORM_STATE = {
   description: '',
   featured: false,
   isFlash: false,
-  isNew: true,
+  isNew: false,
+  isBestSeller: false,
+  isTrending: false,
+  isLimitedAddition: false,
   status: 'active',
 };
 
@@ -52,6 +55,9 @@ const normalizeProduct = (product = {}) => ({
   featured: Boolean(product.isFeatured),
   isFlash: Boolean(product.isFlashSale ?? product.isFlash),
   isNew: Boolean(product.isNewArrival ?? product.isNew),
+  isBestSeller: Boolean(product.isBestSeller),
+  isTrending: Boolean(product.isTrending),
+  isLimitedAddition: Boolean(product.isLimitedAddition),
   status: product.isActive === false ? 'inactive' : 'active',
 });
 
@@ -189,7 +195,7 @@ const ProductForm = () => {
         if (['sizes', 'colors'].includes(key)) {
           const list = val.split(',').map((s) => s.trim()).filter(Boolean);
           formData.append(key, JSON.stringify(list));
-        } else if (['featured', 'isFlash', 'isNew'].includes(key)) {
+        } else if (['featured', 'isFlash', 'isNew', 'isBestSeller', 'isTrending', 'isLimitedAddition'].includes(key)) {
           const mapKey = key === 'featured' ? 'isFeatured' : key;
           formData.append(mapKey, val);
         } else if (key === 'status') {
@@ -414,6 +420,32 @@ const ProductForm = () => {
             />
           </div>
 
+          <div className="tag-options-grid">
+            <label className="tag-option tag-option--new">
+              <input type="checkbox" name="isNew" checked={form.isNew} onChange={handleChange} />
+              <span className="tag-option-dot" />
+              <span className="tag-option-label">New Arrival</span>
+            </label>
+
+            <label className="tag-option tag-option--best">
+              <input type="checkbox" name="isBestSeller" checked={form.isBestSeller} onChange={handleChange} />
+              <span className="tag-option-dot" />
+              <span className="tag-option-label">Best Seller</span>
+            </label>
+
+            <label className="tag-option tag-option--trending">
+              <input type="checkbox" name="isTrending" checked={form.isTrending} onChange={handleChange} />
+              <span className="tag-option-dot" />
+              <span className="tag-option-label">Trending</span>
+            </label>
+
+            <label className="tag-option tag-option--limited">
+              <input type="checkbox" name="isLimitedAddition" checked={form.isLimitedAddition} onChange={handleChange} />
+              <span className="tag-option-dot" />
+              <span className="tag-option-label">Limited Addition</span>
+            </label>
+          </div>
+
           <div className="switches-box">
             <label className="switch-container">
               <input
@@ -435,17 +467,6 @@ const ProductForm = () => {
               />
               <span className="switch-slider" />
               <span className="switch-label">Assign to Flash Sale Room</span>
-            </label>
-
-            <label className="switch-container">
-              <input
-                type="checkbox"
-                name="isNew"
-                checked={form.isNew}
-                onChange={handleChange}
-              />
-              <span className="switch-slider" />
-              <span className="switch-label">Mark as Fresh Seasonal Arrival</span>
             </label>
           </div>
         </section>
