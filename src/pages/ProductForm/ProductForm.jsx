@@ -9,6 +9,7 @@ const DEFAULT_FORM_STATE = {
   name: '',
   category: '',
   subcategory: '',
+  productType: '',
   price: '',
   comparePrice: '',
   sku: '',
@@ -52,6 +53,7 @@ const normalizeProduct = (product = {}) => ({
   sizes: parseCommaList(product.sizes),
   tags: parseCommaList(product.tags),
   subcategory: product.subcategory || '',
+  productType: product.isFlashSale ? 'flash-sale' : (product.isTrending ? 'trending-products' : (product.isBestSeller ? 'best-seller' : (product.isNewArrival || product.isNew ? 'new-arrival' : ''))),
   featured: Boolean(product.isFeatured),
   isFlash: Boolean(product.isFlashSale ?? product.isFlash),
   isNew: Boolean(product.isNewArrival ?? product.isNew),
@@ -192,6 +194,9 @@ const ProductForm = () => {
 
       const formData = new FormData();
       Object.entries(form).forEach(([key, val]) => {
+        if (key === 'productType') {
+          return;
+        }
         if (['sizes', 'colors'].includes(key)) {
           const list = val.split(',').map((s) => s.trim()).filter(Boolean);
           formData.append(key, JSON.stringify(list));
@@ -204,6 +209,10 @@ const ProductForm = () => {
           formData.append(key, val);
         }
       });
+
+      if (form.productType) {
+        formData.append('productType', form.productType);
+      }
 
       newFiles.forEach((file) => formData.append('images', file));
       if (isEdit) {
@@ -418,6 +427,24 @@ const ProductForm = () => {
               onChange={handleChange}
               placeholder="Discovery Tags (e.g. Pret, Festive)"
             />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="productType" style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
+              Product Collection
+            </label>
+            <select
+              id="productType"
+              name="productType"
+              value={form.productType}
+              onChange={handleChange}
+            >
+              <option value="">Select Collection</option>
+              <option value="flash-sale">Flash Sale</option>
+              <option value="new-arrival">New Arrival</option>
+              <option value="trending-products">Trending Products</option>
+              <option value="best-seller">Best Seller</option>
+            </select>
           </div>
 
           <div className="tag-options-grid">
