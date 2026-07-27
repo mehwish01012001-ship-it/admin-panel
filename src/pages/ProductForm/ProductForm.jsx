@@ -20,6 +20,7 @@ const DEFAULT_FORM_STATE = {
   sizes: '',
   tags: '',
   description: '',
+  videoUrl: '', // Optional Video Link
   featured: false,
   isFlash: false,
   isNew: false,
@@ -54,6 +55,7 @@ const normalizeProduct = (product = {}) => ({
   tags: parseCommaList(product.tags),
   subcategory: product.subcategory || '',
   productType: product.isFlashSale ? 'flash-sale' : (product.isTrending ? 'trending-products' : (product.isBestSeller ? 'best-seller' : (product.isNewArrival || product.isNew ? 'new-arrival' : ''))),
+  videoUrl: product.videoUrl || product.video || '', // Populate Video Link
   featured: Boolean(product.isFeatured),
   isFlash: Boolean(product.isFlashSale ?? product.isFlash),
   isNew: Boolean(product.isNewArrival ?? product.isNew),
@@ -71,7 +73,10 @@ const ProductForm = () => {
   const [form, setForm] = useState(DEFAULT_FORM_STATE);
   const [categories, setCategories] = useState([]);
   const [newFiles, setNewFiles] = useState([]);
+  const [videoFile, setVideoFile] = useState(null); // Dedicated state for uploaded video file
+  const [videoPreview, setVideoPreview] = useState(null); // Preview for local uploaded video
   const [existingImages, setExistingImages] = useState([]);
+  const [existingVideo, setExistingVideo] = useState(''); // Existing server video URL
   const [previews, setPreviews] = useState({});
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -117,6 +122,15 @@ const ProductForm = () => {
           if (Array.isArray(product.images)) {
             setExistingImages(product.images.map((img) => img.url || img).filter(Boolean));
           }
+          const videoUrl = product.videoUrl || product.video || '';
+          if (videoUrl) {
+            setExistingVideo(videoUrl);
+          } else if (Array.isArray(product.media)) {
+            const firstVideo = product.media.find((item) => item?.type === 'video' && item?.url);
+            if (firstVideo) {
+              setExistingVideo(firstVideo.url);
+            }
+          }
         }
       })
       .catch(() => {
@@ -139,8 +153,11 @@ const ProductForm = () => {
           URL.revokeObjectURL(preview.url);
         }
       });
+      if (videoPreview?.startsWith('blob:')) {
+        URL.revokeObjectURL(videoPreview);
+      }
     };
-  }, [previews]);
+  }, [previews, videoPreview]);
 
   const handleChange = useCallback((e) => {
     const { name, value, type, checked } = e.target;
@@ -164,6 +181,30 @@ const ProductForm = () => {
         [file.name]: { url: blobUrl, type: isVideo ? 'video' : 'image' },
       }));
     });
+  };
+
+  const handleVideoFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (videoPreview?.startsWith('blob:')) {
+      URL.revokeObjectURL(videoPreview);
+    }
+
+    setVideoFile(file);
+    setVideoPreview(URL.createObjectURL(file));
+  };
+
+  const removeVideoFile = () => {
+    if (videoPreview?.startsWith('blob:')) {
+      URL.revokeObjectURL(videoPreview);
+    }
+    setVideoFile(null);
+    setVideoPreview(null);
+  };
+
+  const removeExistingVideo = () => {
+    setExistingVideo('');
   };
 
   const removeNewImage = (fileName) => {
@@ -214,9 +255,17 @@ const ProductForm = () => {
         formData.append('productType', form.productType);
       }
 
+      // Append multi-media images
       newFiles.forEach((file) => formData.append('images', file));
+      
+      // Append dedicated single video if uploaded
+      if (videoFile) {
+        formData.append('video', videoFile);
+      }
+
       if (isEdit) {
         formData.append('existingImages', JSON.stringify(existingImages));
+        formData.append('existingVideo', existingVideo);
       }
 
       const config = {
@@ -242,20 +291,35 @@ const ProductForm = () => {
     }
   };
 
-  const allImages = useMemo(() => [
-    ...existingImages.map((url) => ({
-      url: getAbsoluteUrl(url),
-      originalUrl: url,
-      isExisting: true,
-      type: /\.(mp4|webm|mov)$/i.test(url) ? 'video' : 'image',
-    })),
-    ...newFiles.map((file) => ({
-      url: previews[file.name]?.url || '',
-      name: file.name,
-      isExisting: false,
-      type: previews[file.name]?.type || 'image',
-    })),
-  ], [existingImages, newFiles, previews]);
+  const allImages = useMemo(() => {
+    const items = [
+      ...existingImages.map((url) => ({
+        url: getAbsoluteUrl(url),
+        originalUrl: url,
+        isExisting: true,
+        type: /\.(mp4|webm|mov)$/i.test(url) ? 'video' : 'image',
+      })),
+    ];
+
+    if (existingVideo && !existingImages.includes(existingVideo)) {
+      items.push({
+        url: getAbsoluteUrl(existingVideo),
+        originalUrl: existingVideo,
+        isExisting: true,
+        type: /\.(mp4|webm|mov)$/i.test(existingVideo) ? 'video' : 'video',
+      });
+    }
+
+    return [
+      ...items,
+      ...newFiles.map((file) => ({
+        url: previews[file.name]?.url || '',
+        name: file.name,
+        isExisting: false,
+        type: previews[file.name]?.type || 'image',
+      })),
+    ];
+  }, [existingImages, existingVideo, newFiles, previews]);
 
   const priceFormatted = useMemo(() => {
     return form.price ? Number(form.price).toLocaleString('en-US', { minimumFractionDigits: 2 }) : '0.00';
@@ -303,7 +367,6 @@ const ProductForm = () => {
 
           <div className="grid2">
             <div className="price-input-wrapper">
-            
               <input
                 name="price"
                 value={form.price}
@@ -315,7 +378,6 @@ const ProductForm = () => {
               />
             </div>
             <div className="price-input-wrapper">
-              {/* <span className="currency-prefix">Rs.</span> */}
               <input
                 name="comparePrice"
                 value={form.comparePrice}
@@ -365,6 +427,25 @@ const ProductForm = () => {
               rows={4}
               required
             />
+          </div>
+        </section>
+
+        {/* OPTIONAL VIDEO LINK CARD */}
+        <section className="card">
+          <div className="card-header">
+            <h2>Video Link (Optional)</h2>
+            <span className="card-subtitle">Embed YouTube, Vimeo, or external MP4 video link</span>
+          </div>
+
+          <div className="form-group">
+            <input
+              type="text"
+              name="videoUrl"
+              value={form.videoUrl}
+              onChange={handleChange}
+              placeholder="e.g. https://www.youtube.com/watch?v=example or https://site.com/video.mp4"
+            />
+            <span className="field-note">Leave empty if you don't wish to add a video link</span>
           </div>
         </section>
 
@@ -510,8 +591,10 @@ const ProductForm = () => {
               ) : (
                 <img src={allImages[0].url} alt="Preview" />
               )
+            ) : videoPreview || existingVideo ? (
+              <video src={videoPreview || getAbsoluteUrl(existingVideo)} autoPlay loop muted playsInline />
             ) : (
-              <span className="preview-placeholder">No Preview Image</span>
+              <span className="preview-placeholder">No Preview Media</span>
             )}
           </div>
           <div className="preview-meta">
@@ -528,6 +611,45 @@ const ProductForm = () => {
           </div>
         </div>
 
+        {/* OPTIONAL DIRECT VIDEO UPLOAD SECTION */}
+        <div className="card">
+          <div className="card-header">
+            <h2>Product Video File (Optional)</h2>
+            <span className="card-subtitle">Upload custom product showcase video clip</span>
+          </div>
+
+          <div className="file-drop-zone">
+            <input
+              type="file"
+              id="video-upload"
+              onChange={handleVideoFileChange}
+              accept="video/*"
+              disabled={uploading}
+            />
+            <label htmlFor="video-upload" className="drop-zone-label">
+              <span className="upload-icon">🎬</span>
+              <span className="upload-text-main">
+                {videoFile ? videoFile.name : 'Upload Main Showcase Video'}
+              </span>
+              <span className="upload-text-sub">MP4, WEBM, MOV supported (Optional)</span>
+            </label>
+          </div>
+
+          {(videoPreview || existingVideo) && (
+            <div className="single-video-preview">
+              <video src={videoPreview || getAbsoluteUrl(existingVideo)} controls muted />
+              <button
+                type="button"
+                className="delete-video-btn"
+                onClick={videoPreview ? removeVideoFile : removeExistingVideo}
+              >
+                Remove Video
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* IMAGES & GENERAL MEDIA */}
         <div className="card">
           <div className="card-header">
             <h2>Media Assets</h2>

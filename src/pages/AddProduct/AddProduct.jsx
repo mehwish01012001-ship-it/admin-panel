@@ -95,9 +95,9 @@ const AddProduct = () => {
   return (
     <div className="add-product-page">
       <header className="page-header">
-        <span className="subtitle-brand">EXQUISITE CRAFTSMANSHIP</span>
+        {/* <span className="subtitle-brand">EXQUISITE CRAFTSMANSHIP</span> */}
         <h1>Product Creation</h1>
-        <p>Introduce new masterpieces to your premium women's stitched collection catalog.</p>
+        {/* <p>Introduce new masterpieces to your premium women's stitched collection catalog.</p> */}
       </header>
 
       <div className="page-content">
