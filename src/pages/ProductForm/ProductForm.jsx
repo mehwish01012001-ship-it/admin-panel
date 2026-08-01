@@ -5,6 +5,50 @@ import { categoryService } from '../../services/categoryService';
 import { getAbsoluteUrl } from '../../services/api';
 import './ProductForm.css';
 
+// Helpers to detect and convert external video links (YouTube/Vimeo)
+const isExternalVideoHost = (value) => {
+  if (!value) return false;
+  return /(?:youtube\.com\/|youtu\.be\/|vimeo\.com\/|player\.vimeo\.com)/i.test(String(value));
+};
+
+const getVideoEmbedUrl = (url) => {
+  if (!url) return url;
+  const raw = String(url).trim();
+
+  try {
+    let normalized = raw;
+    if (/^\/\//.test(normalized)) normalized = `https:${normalized}`;
+    if (!/^https?:\/\//i.test(normalized)) normalized = `https://${normalized.replace(/^\/+/, '')}`;
+
+    const parsed = new URL(normalized);
+    const host = parsed.hostname.toLowerCase();
+
+    if (host.includes('youtube.com') || host.includes('youtu.be')) {
+      let id = parsed.searchParams.get('v');
+      if (!id) {
+        const parts = parsed.pathname.split('/').filter(Boolean);
+        id = parts.length ? parts[parts.length - 1] : '';
+      }
+      if (id) return `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&loop=1&playlist=${id}`;
+    }
+
+    if (host.includes('vimeo.com')) {
+      const parts = parsed.pathname.split('/').filter(Boolean);
+      const id = parts.length ? parts[parts.length - 1] : '';
+      if (id && /^\d+$/.test(id)) return `https://player.vimeo.com/video/${id}?autoplay=1&muted=1&loop=1&background=1`;
+    }
+  } catch (e) {
+    // fallback
+  }
+
+  const youtubeMatch = raw.match(/(?:youtube\.com\/.*v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]+)/i);
+  if (youtubeMatch) return `https://www.youtube.com/embed/${youtubeMatch[1]}?autoplay=1&mute=1&loop=1&playlist=${youtubeMatch[1]}`;
+  const vimeoMatch = raw.match(/vimeo\.com\/(\d+)/i);
+  if (vimeoMatch) return `https://player.vimeo.com/video/${vimeoMatch[1]}?autoplay=1&muted=1&loop=1&background=1`;
+
+  return raw;
+};
+
 const DEFAULT_FORM_STATE = {
   name: '',
   category: '',
@@ -587,12 +631,34 @@ const ProductForm = () => {
           <div className="preview-img-wrapper">
             {allImages[0] ? (
               allImages[0].type === 'video' ? (
-                <video src={allImages[0].url} autoPlay loop muted playsInline />
+                isExternalVideoHost(allImages[0].url) ? (
+                  <iframe
+                    src={getVideoEmbedUrl(allImages[0].url)}
+                    title={form.name || 'product-preview'}
+                    className="product-preview-iframe"
+                    allow="autoplay; encrypted-media; picture-in-picture"
+                    frameBorder="0"
+                    allowFullScreen
+                  />
+                ) : (
+                  <video src={allImages[0].url} autoPlay loop muted playsInline />
+                )
               ) : (
                 <img src={allImages[0].url} alt="Preview" />
               )
             ) : videoPreview || existingVideo ? (
-              <video src={videoPreview || getAbsoluteUrl(existingVideo)} autoPlay loop muted playsInline />
+              isExternalVideoHost(videoPreview || existingVideo) ? (
+                <iframe
+                  src={getVideoEmbedUrl(videoPreview || existingVideo)}
+                  title={form.name || 'product-preview'}
+                  className="product-preview-iframe"
+                  allow="autoplay; encrypted-media; picture-in-picture"
+                  frameBorder="0"
+                  allowFullScreen
+                />
+              ) : (
+                <video src={videoPreview || getAbsoluteUrl(existingVideo)} autoPlay loop muted playsInline />
+              )
             ) : (
               <span className="preview-placeholder">No Preview Media</span>
             )}
@@ -637,7 +703,18 @@ const ProductForm = () => {
 
           {(videoPreview || existingVideo) && (
             <div className="single-video-preview">
-              <video src={videoPreview || getAbsoluteUrl(existingVideo)} controls muted />
+              {isExternalVideoHost(videoPreview || existingVideo) ? (
+                <iframe
+                  src={getVideoEmbedUrl(videoPreview || existingVideo)}
+                  title={form.name || 'product-video'}
+                  className="single-video-iframe"
+                  allow="autoplay; encrypted-media; picture-in-picture"
+                  frameBorder="0"
+                  allowFullScreen
+                />
+              ) : (
+                <video src={videoPreview || getAbsoluteUrl(existingVideo)} controls muted />
+              )}
               <button
                 type="button"
                 className="delete-video-btn"
@@ -686,7 +763,18 @@ const ProductForm = () => {
               {allImages.map((img) => (
                 <div key={img.isExisting ? img.originalUrl : img.name} className="imgBox">
                   {img.type === 'video' ? (
-                    <video src={img.url} muted />
+                    isExternalVideoHost(img.url) ? (
+                      <iframe
+                        src={getVideoEmbedUrl(img.url)}
+                        title={img.name || 'video-thumb'}
+                        className="thumbnail-video-iframe"
+                        allow="autoplay; encrypted-media; picture-in-picture"
+                        frameBorder="0"
+                        allowFullScreen
+                      />
+                    ) : (
+                      <video src={img.url} muted />
+                    )
                   ) : (
                     <img src={img.url} alt="Thumbnail" />
                   )}
